@@ -1,0 +1,33 @@
+# Aplicação (API + site) de um ambiente do servidor.
+# Usado pelo deploy.sh junto com /opt/hub-saude/<amb>/docker-compose.yml (que define o banco "db").
+# Caminhos relativos são resolvidos a partir de /opt/hub-saude/<amb>.
+services:
+  api:
+    build: ./app/backend
+    container_name: hub-${AMBIENTE}-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      AMBIENTE: ${AMBIENTE}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SEGREDO: ${JWT_SEGREDO}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_NOME: ${ADMIN_NOME}
+      ADMIN_SENHA_INICIAL: ${ADMIN_SENHA_INICIAL}
+      VERSAO: ${VERSAO:-desconhecida}
+
+  web:
+    build: ./app/frontend
+    container_name: hub-${AMBIENTE}-web
+    restart: unless-stopped
+    depends_on: [api]
+    networks:
+      default: {}
+      hub-proxy:
+        aliases: [hub-${AMBIENTE}-web]
+
+networks:
+  hub-proxy:
+    external: true
