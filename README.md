@@ -41,7 +41,48 @@ docker compose up -d
 
 Os scripts em `db/init/` rodam automaticamente na primeira vez que o banco local sobe.
 
+### Backend e frontend
+
+Em dois terminais:
+
+```bash
+# terminal 1 - API em http://localhost:3000
+cd backend
+npm install
+npm run build
+node --env-file=../.env dist/main.js
+```
+
+```bash
+# terminal 2 - site em http://localhost:5173
+cd frontend
+npm install
+npm run dev
+```
+
+Abra http://localhost:5173 e entre com o `ADMIN_EMAIL` / `ADMIN_SENHA_INICIAL` do seu `.env`.
+As tabelas são criadas sozinhas quando a API sobe (arquivos em `backend/migrations/`).
+
+| Página | Endereço | Quem acessa |
+|---|---|---|
+| Página externa | `/` | qualquer pessoa, sem login |
+| Login | `/login` | equipe |
+| Minha área | `/inicio` | qualquer pessoa logada |
+| Administração | `/admin/pessoas`, `/admin/sincronizacao`, `/admin/auditoria` | só "Administrador do sistema" |
+
 > Use **somente dados fictícios** no ambiente local e no dev. Dado real de saúde só em produção.
+
+---
+
+## Endereços no servidor
+
+| Ambiente | Endereço |
+|---|---|
+| dev | http://dev.189-44-109-186.sslip.io:8080 |
+| hml | http://hml.189-44-109-186.sslip.io:8080 |
+| prod | http://189.44.109.186:8080 |
+
+Na rede interna da UNIFAE, troque `189-44-109-186` por `192-168-3-103` (e o IP do prod por `192.168.3.103`).
 
 ---
 
@@ -67,8 +108,8 @@ A conta SSH serve **apenas** para o túnel: não abre terminal no servidor.
 ## Estrutura do repositório
 
 ```
-backend/        API (NestJS + TypeScript)
-frontend/       Interface (Vue 3)
+backend/        API (NestJS + TypeScript) - src/ código, migrations/ SQL do banco
+frontend/       Interface (Vue 3 + Vite) - src/views/ páginas
 db/init/        SQL executado ao criar o banco local
 deploy/         Scripts usados pelo servidor para publicar dev/hml/prod
 docs/           Documentação do projeto
