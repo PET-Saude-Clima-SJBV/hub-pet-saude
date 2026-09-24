@@ -23,10 +23,10 @@ services:
     container_name: hub-${AMBIENTE}-web
     restart: unless-stopped
     depends_on: [api]
+    # o proxy encontra este container pelo nome (hub-<amb>-web) na rede hub-proxy
     networks:
-      default: {}
-      hub-proxy:
-        aliases: [hub-${AMBIENTE}-web]
+      - default
+      - hub-proxy
 
 networks:
   hub-proxy:
