@@ -1,0 +1,31 @@
+# Publica automaticamente no servidor HUB-SAUDE quando um PR é mesclado.
+#   dev  -> /opt/hub-saude/dev
+#   hml  -> /opt/hub-saude/hml
+#   main -> /opt/hub-saude/prod
+# Roda no runner "self-hosted" instalado no próprio servidor (não precisa abrir portas).
+name: Deploy
+
+on:
+  push:
+    branches: [dev, hml, main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, hub-saude]
+    environment: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publicar
+        run: |
+          case "${{ github.ref_name }}" in
+            dev)  AMB=dev ;;
+            hml)  AMB=hml ;;
+            main) AMB=prod ;;
+          esac
+          bash deploy/deploy.sh "$AMB"
