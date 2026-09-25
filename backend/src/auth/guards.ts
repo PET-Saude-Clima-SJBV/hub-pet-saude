@@ -60,6 +60,24 @@ export class LogadoGuard implements CanActivate {
   }
 }
 
+/**
+ * Rotas públicas: se houver sessão válida, identifica a pessoa (para funcionalidades "em teste"
+ * aparecerem para administradores e desenvolvedores); sem sessão, segue como visitante.
+ */
+@Injectable()
+export class SessaoOpcionalGuard implements CanActivate {
+  constructor(private logado: LogadoGuard) {}
+
+  async canActivate(ctx: ExecutionContext) {
+    try {
+      await this.logado.canActivate(ctx);
+    } catch {
+      /* visitante */
+    }
+    return true;
+  }
+}
+
 /** Exige login + flag "Administrador do sistema". Usar junto com LogadoGuard. */
 @Injectable()
 export class AdminGuard implements CanActivate {

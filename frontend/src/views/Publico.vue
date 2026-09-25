@@ -2,13 +2,18 @@
 import { onMounted, ref } from 'vue';
 import { api, ErroApi } from '../api';
 import { sessao } from '../sessao';
+import CardClima from '../components/publico/CardClima.vue';
+import MapaCalor from '../components/publico/MapaCalor.vue';
 
 interface Indicador { titulo: string; valor: number; unidade: string | null; descricao: string; ficticio: boolean }
 const indicadores = ref<Indicador[]>([]);
 const estado = ref<'carregando' | 'ok' | 'manutencao' | 'erro'>('carregando');
+const func = ref<Record<string, boolean>>({});
 
 onMounted(async () => {
   try {
+    func.value = await api('/publico/funcionalidades');
+    if (!func.value.pagina_publica) { estado.value = 'manutencao'; return; }
     indicadores.value = (await api<{ indicadores: Indicador[] }>('/publico/resumo')).indicadores;
     estado.value = 'ok';
   } catch (e) {
@@ -17,6 +22,7 @@ onMounted(async () => {
 });
 
 const PARCEIROS = [
+  { nome: 'UNIFAE — Centro Universitário das Faculdades Associadas de Ensino', logo: '/logos/unifae.png' },
   { nome: 'Prefeitura de São João da Boa Vista', logo: '/logos/prefeitura-sjbv.png' },
   { nome: 'Instituto Federal de São Paulo, câmpus São João da Boa Vista', logo: '/logos/ifsp.png' },
   { nome: 'UNESP, câmpus de São João da Boa Vista', logo: '/logos/unesp.png' },
@@ -58,6 +64,7 @@ const PARCEIROS = [
 
     <main v-else>
       <p v-if="estado === 'erro'" class="erro">Não foi possível carregar os dados agora. Tente novamente em alguns minutos.</p>
+      <CardClima v-if="func.clima_publico" class="bloco" />
       <section class="cartoes">
         <article v-for="i in indicadores" :key="i.titulo" class="cartao kpi">
           <div class="valor">{{ i.valor.toLocaleString('pt-BR') }}<small v-if="i.unidade"> {{ i.unidade }}</small></div>
@@ -65,6 +72,14 @@ const PARCEIROS = [
           <p>{{ i.descricao }}</p>
           <span v-if="i.ficticio" class="selo ambar">dado ilustrativo</span>
         </article>
+      </section>
+      <section v-if="func.mapa_publico && estado === 'ok'" class="cartao bloco mapa">
+        <div class="titulo-mapa">
+          <h2>Mapa de calor do município</h2>
+          <span class="selo ambar">dados ilustrativos</span>
+        </div>
+        <p class="nota-mapa">Onde se concentram os casos acompanhados pelo projeto. Os territórios e os dados reais entram aqui assim que forem consolidados.</p>
+        <MapaCalor />
       </section>
       <p v-if="estado === 'ok'" class="nota">Esta página mostra apenas dados agregados. Nenhuma informação pessoal é publicada.</p>
     </main>
@@ -74,7 +89,6 @@ const PARCEIROS = [
         <span class="rotulo">Realização</span>
         <div class="logos">
           <img src="/logos/pet-saude-clima.png" alt="PET-Saúde Clima" title="PET-Saúde Clima" />
-          <span class="texto-logo" title="Centro Universitário das Faculdades Associadas de Ensino">UNIFAE</span>
           <img v-for="p in PARCEIROS" :key="p.logo" :src="p.logo" :alt="p.nome" :title="p.nome" />
         </div>
       </div>
@@ -102,6 +116,11 @@ main { padding: 0 1rem; margin-top: -1.75rem; flex: 1; }
 .kpi .titulo { font-weight: 700; margin-top: .2rem; }
 .kpi p { color: var(--texto-2); font-size: .88rem; margin: .4rem 0 .6rem; }
 .nota { color: var(--texto-2); font-size: .85rem; margin: 1.5rem 0; }
+.bloco { margin-bottom: 1rem; }
+.cartoes + .bloco { margin-top: 1rem; }
+.titulo-mapa { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.titulo-mapa h2 { margin: 0; }
+.nota-mapa { font-size: .88rem; color: var(--texto-2); margin: .4rem 0 .9rem; }
 
 .manutencao { display: flex; justify-content: center; padding-bottom: 2rem; }
 .aviso-manutencao { max-width: 720px; text-align: center; padding: 2.5rem 2rem; }

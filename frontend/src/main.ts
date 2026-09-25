@@ -18,6 +18,7 @@ const router = createRouter({
     { path: '/atividades/resumo', component: () => import('./views/Resumo.vue'), meta: { func: 'atividades' } },
     { path: '/admin', redirect: '/admin/pessoas' },
     { path: '/admin/funcionalidades', component: () => import('./views/admin/Funcionalidades.vue'), meta: { admin: true } },
+    { path: '/admin/integracoes', component: () => import('./views/admin/Integracoes.vue'), meta: { admin: true } },
     { path: '/admin/permissoes', component: () => import('./views/admin/Permissoes.vue'), meta: { admin: true } },
     { path: '/admin/pessoas', component: () => import('./views/admin/Pessoas.vue'), meta: { admin: true } },
     { path: '/admin/pessoas/nova', component: () => import('./views/admin/PessoaForm.vue'), meta: { admin: true } },
