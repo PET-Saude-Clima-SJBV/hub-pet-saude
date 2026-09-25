@@ -36,9 +36,17 @@ export const NOME_AMBIENTE: Record<string, string> = {
   prod: 'Produção',
 };
 
-export interface Permissao { ambiente: string; banco: 'nenhum' | 'leitura' | 'escrita'; servidor: boolean }
+export const PERFIS: Record<string, string> = {
+  desenvolvedor: 'Desenvolvedor (Grupo II)',
+  usuario: 'Usuário do sistema',
+};
+
+export const GRUPOS: Record<number, string> = { 1: 'PET I', 2: 'PET II', 3: 'PET III', 4: 'PET IV', 5: 'PET V' };
+
+export interface Permissao { ambiente: string; hub: boolean; banco: 'nenhum' | 'leitura' | 'escrita'; servidor: boolean }
 export interface Pessoa {
-  id: string; nome: string; email: string; papel: string; admin_sistema: boolean; ativo: boolean;
+  id: string; nome: string; email: string; papel: string; perfil: 'desenvolvedor' | 'usuario'; grupo: number | null;
+  admin_sistema: boolean; ativo: boolean;
   github_usuario: string | null; github_permissao: string;
   usuario_servidor: string | null; chave_ssh: string | null;
   ultimo_login: string | null; permissoes: Permissao[];

@@ -35,6 +35,7 @@ export async function migrar(pool: Pool) {
 
 /** Cria o primeiro administrador do sistema, se ainda não existir nenhum. */
 export async function criarAdminInicial(pool: Pool) {
+  if (config.painelModo !== 'central') return; // em ambiente gerenciado, o sincronizador traz as pessoas
   const { email, nome, senhaInicial } = config.admin;
   const existe = await pool.query('SELECT 1 FROM hub.usuarios WHERE admin_sistema LIMIT 1');
   if (existe.rowCount) return;
@@ -43,13 +44,13 @@ export async function criarAdminInicial(pool: Pool) {
     return;
   }
   const { rows } = await pool.query(
-    `INSERT INTO hub.usuarios (nome, email, senha_hash, papel, admin_sistema, github_permissao)
-     VALUES ($1, $2, $3, 'tutor', true, 'admin') RETURNING id`,
+    `INSERT INTO hub.usuarios (nome, email, senha_hash, papel, admin_sistema, github_permissao, perfil, grupo)
+     VALUES ($1, $2, $3, 'tutor', true, 'admin', 'desenvolvedor', 2) RETURNING id`,
     [nome, email.toLowerCase(), await bcrypt.hash(senhaInicial, 12)],
   );
   await pool.query(
-    `INSERT INTO hub.permissoes_ambiente (usuario_id, ambiente, banco, servidor)
-     SELECT $1, a, 'escrita', true FROM unnest(ARRAY['dev','hml','prod']) a`,
+    `INSERT INTO hub.permissoes_ambiente (usuario_id, ambiente, hub, banco, servidor)
+     SELECT $1, a, true, 'escrita', true FROM unnest(ARRAY['dev','hml','prod']) a`,
     [rows[0].id],
   );
   console.log(`[admin] Administrador inicial criado: ${email}`);
