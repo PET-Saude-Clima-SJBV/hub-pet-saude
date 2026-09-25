@@ -8,12 +8,11 @@ import { PermissoesService } from '../permissoes/permissoes';
 import { registrarAuditoria } from '../usuarios/auditoria';
 import { Funcionalidade, FuncionalidadeGuard } from '../funcionalidades/funcionalidades';
 import { CatalogosService } from '../catalogos/catalogos';
+import { CAMPOS_OBRIGATORIOS_GUIA, COLUNAS_FICHA, fichaPreenchida, lerFicha } from './ficha-indicador';
 
 const STATUS = ['nao_iniciado', 'em_andamento', 'em_atraso', 'concluido'];
-const PERIODICIDADES = ['semanal', 'mensal', 'trimestral', 'semestral', 'anual', 'unica'];
-const CAMPOS_FICHA = ['formula_numerador', 'linha_base', 'fonte', 'periodicidade', 'responsavel'];
-
-const ficha = (i: any) => CAMPOS_FICHA.filter((c) => i[c] !== null && i[c] !== '').length;
+const CAMPOS_FICHA = CAMPOS_OBRIGATORIOS_GUIA;
+const ficha = fichaPreenchida;
 
 function texto(v: unknown, max = 2000): string | null {
   if (v === undefined || v === null) return null;
@@ -88,6 +87,7 @@ export class MetasController {
       ...m, indicadores, acoes,
       pode: {
         editar_meta: await this.perms.pode(u, 'metas.editar', m.grupo),
+        editar_estrutura: (await this.perms.escopo(u, 'metas.editar')) === 'todos',
         editar_indicadores: await this.perms.pode(u, 'indicadores.editar', m.grupo),
         ver_acoes: podeVerAcoes,
         criar_acoes: await this.perms.pode(u, 'acoes.editar', m.grupo) || escopoAcoes === 'proprio',
@@ -100,32 +100,39 @@ export class MetasController {
   async atualizarMeta(@Usuario() u: UsuarioSessao, @Param('id', ParseIntPipe) id: number, @Body() d: any) {
     const m = await this.meta(id);
     await this.perms.exigir(u, 'metas.editar', m.grupo);
+    // título, eixo e grupo (ex.: troca de metas entre grupos) só com escopo "todos" (coordenação geral)
+    const estrutura = (await this.perms.escopo(u, 'metas.editar')) === 'todos';
+    const titulo = estrutura ? (texto(d.titulo, 500) ?? m.titulo) : m.titulo;
+    const eixo = estrutura && d.eixo ? String(d.eixo) : m.eixo;
+    if (!['I', 'II', 'III'].includes(eixo)) throw new BadRequestException('Eixo inválido');
+    let grupo = m.grupo;
+    if (estrutura && d.grupo != null && Number(d.grupo) !== m.grupo) {
+      await this.cat.exigir('grupos', String(d.grupo), 'o grupo');
+      grupo = Number(d.grupo);
+    }
     const r = await this.db.um(
-      `UPDATE hub.metas SET status = $2, responsaveis = $3, parceiros = $4,
-         prazo_inicio = $5, prazo_fim = $6, atualizado_em = now() WHERE id = $1 RETURNING *`,
+      `UPDATE hub.metas SET status = $2, responsaveis = $3, parceiros = $4, prazo_inicio = $5, prazo_fim = $6,
+         titulo = $7, eixo = $8, grupo = $9, atualizado_em = now() WHERE id = $1 RETURNING *`,
       [id, status(d.status, m.status), texto(d.responsaveis) ?? m.responsaveis, texto(d.parceiros) ?? m.parceiros,
-        numero(d.prazo_inicio) ?? m.prazo_inicio, numero(d.prazo_fim) ?? m.prazo_fim]);
-    await registrarAuditoria(this.db, u, `alterou a meta ${m.codigo}`, null, { status: [m.status, r.status] });
+        numero(d.prazo_inicio) ?? m.prazo_inicio, numero(d.prazo_fim) ?? m.prazo_fim, titulo, eixo, grupo]);
+    await registrarAuditoria(this.db, u, `alterou a meta ${m.codigo}`, null, {
+      status: [m.status, r.status], ...(grupo !== m.grupo ? { grupo: [m.grupo, grupo] } : {}),
+      ...(titulo !== m.titulo ? { titulo: [m.titulo, titulo] } : {}),
+    });
     return r;
   }
 
   // ------------------------------------------------------------------ indicadores
-  private dadosIndicador(d: any) {
-    if (d.periodicidade && !PERIODICIDADES.includes(d.periodicidade)) throw new BadRequestException('Periodicidade inválida');
-    return [texto(d.formula_numerador), texto(d.formula_denominador), texto(d.unidade, 50), numero(d.linha_base),
-      numero(d.valor_alvo), texto(d.fonte), d.periodicidade || null, texto(d.responsavel, 200), texto(d.observacoes)];
-  }
-
   @Post('metas/:id/indicadores')
   async criarIndicador(@Usuario() u: UsuarioSessao, @Param('id', ParseIntPipe) id: number, @Body() d: any) {
     const m = await this.meta(id);
     await this.perms.exigir(u, 'indicadores.editar', m.grupo);
     if (!texto(d.nome, 300)) throw new BadRequestException('Informe o nome do indicador');
+    const f = await lerFicha(d, this.cat);
     const r = await this.db.um(
-      `INSERT INTO hub.indicadores (meta_id, nome, formula_numerador, formula_denominador, unidade, linha_base,
-         valor_alvo, fonte, periodicidade, responsavel, observacoes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [id, texto(d.nome, 300), ...this.dadosIndicador(d)]);
+      `INSERT INTO hub.indicadores (meta_id, nome, ${COLUNAS_FICHA.join(', ')})
+       VALUES ($1, $2, ${COLUNAS_FICHA.map((_, i) => `$${i + 3}`).join(', ')}) RETURNING *`,
+      [id, texto(d.nome, 300), ...COLUNAS_FICHA.map((c) => f[c])]);
     await registrarAuditoria(this.db, u, `criou indicador na meta ${m.codigo}`, null, { indicador: r.nome });
     return r;
   }
@@ -137,11 +144,11 @@ export class MetasController {
     await this.perms.exigir(u, 'indicadores.editar', i.grupo);
     // o nome do indicador oficial vem do edital e não muda
     const nome = i.oficial ? i.nome : (texto(d.nome, 300) ?? i.nome);
+    const f = await lerFicha(d, this.cat);
     const r = await this.db.um(
-      `UPDATE hub.indicadores SET nome = $2, formula_numerador = $3, formula_denominador = $4, unidade = $5,
-         linha_base = $6, valor_alvo = $7, fonte = $8, periodicidade = $9, responsavel = $10, observacoes = $11,
+      `UPDATE hub.indicadores SET nome = $2, ${COLUNAS_FICHA.map((c, n) => `${c} = $${n + 3}`).join(', ')},
          atualizado_em = now() WHERE id = $1 RETURNING *`,
-      [id, nome, ...this.dadosIndicador(d)]);
+      [id, nome, ...COLUNAS_FICHA.map((c) => f[c])]);
     await registrarAuditoria(this.db, u, `editou a ficha do indicador da meta ${i.codigo}`, null, { indicador: r.nome, preenchida: `${ficha(r)}/${CAMPOS_FICHA.length}` });
     return r;
   }

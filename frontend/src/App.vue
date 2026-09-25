@@ -26,7 +26,7 @@ const menu = computed<Grupo[]>(() => {
     ],
   });
   if (sessao.func.metas && amplo('metas.ver')) g.push({
-    chave: 'projeto', rotulo: 'Projeto', itens: [{ para: '/metas', rotulo: 'Metas e ações' }],
+    chave: 'projeto', rotulo: 'Projeto', itens: [{ para: '/metas', rotulo: 'Metas e ações' }, { para: '/indicadores', rotulo: 'Indicadores' }],
   });
   if (sessao.eu?.admin_sistema) g.push({
     chave: 'admin', rotulo: 'Administração', itens: [

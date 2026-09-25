@@ -43,7 +43,7 @@ onBeforeUnmount(() => mapa?.remove());
 
 <template>
   <div class="mapa-calor">
-    <div ref="el" class="mapa" :style="{ height: altura + 'px' }" role="img"
+    <div ref="el" class="mapa" :style="{ height: `min(${altura}px, 62vh)` }" role="img"
       aria-label="Mapa de calor ilustrativo de São João da Boa Vista"></div>
     <div class="legenda">
       <span>menor</span><i class="rampa"></i><span>maior intensidade</span>

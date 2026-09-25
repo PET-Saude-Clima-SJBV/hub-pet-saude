@@ -6,6 +6,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { DbService } from '../db/db.service';
 import { COOKIE_SESSAO, config } from '../config';
+import { Dispositivo, identificarDispositivo } from '../auditoria/dispositivo';
 
 /** Condição SQL: a pessoa (hub.usuarios u) pode entrar no HUB deste ambiente. */
 export const PODE_ENTRAR_AQUI = config.ambiente === 'local'
@@ -23,6 +24,8 @@ export interface UsuarioSessao {
   admin_sistema: boolean;
   /** "Ver como" (só fora do prod): administrador que está vendo o sistema como esta pessoa */
   por?: { id: string; nome: string };
+  /** de onde veio a requisição (auditoria) */
+  dispositivo?: Dispositivo;
 }
 
 /** "Ver como" só existe fora da produção. */
@@ -55,6 +58,7 @@ export class LogadoGuard implements CanActivate {
       if (!admin) throw new UnauthorizedException('Sessão de "ver como" inválida');
       u.por = admin;
     }
+    u.dispositivo = identificarDispositivo(req.headers);
     req.usuario = u;
     return true;
   }

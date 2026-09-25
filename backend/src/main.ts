@@ -12,6 +12,7 @@ import { PublicoController, SaudeController } from './publico/publico.controller
 import { AdminGuard, LogadoGuard } from './auth/guards';
 import { PermissoesController, PermissoesService } from './permissoes/permissoes';
 import { MetasController } from './metas/metas.controller';
+import { IndicadoresController } from './metas/indicadores.controller';
 import { AtividadesController } from './atividades/atividades.controller';
 import { FuncionalidadeGuard, FuncionalidadesController, FuncionalidadesService } from './funcionalidades/funcionalidades';
 import { IntegracoesController, IntegracoesService } from './integracoes/integracoes';
@@ -24,7 +25,7 @@ import { SessaoOpcionalGuard } from './auth/guards';
   imports: [DbModule, JwtModule.register({ secret: config.jwtSegredo })],
   controllers: [
     AuthController, UsuariosController, PublicoController, SaudeController, PermissoesController,
-    FuncionalidadesController, MetasController, AtividadesController, IntegracoesController, CatalogosController,
+    FuncionalidadesController, MetasController, AtividadesController, IntegracoesController, CatalogosController, IndicadoresController,
   ],
   providers: [
     LogadoGuard, AdminGuard, SessaoOpcionalGuard, PermissoesService, FuncionalidadesService, FuncionalidadeGuard,

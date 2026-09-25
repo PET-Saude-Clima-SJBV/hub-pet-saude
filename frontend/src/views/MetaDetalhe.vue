@@ -4,7 +4,8 @@ import { useRoute } from 'vue-router';
 import { api, EIXOS, GRUPOS, STATUS } from '../api';
 import { sessao } from '../sessao';
 import { confirmar } from '../dialogo';
-import { carregarCatalogos, itens } from '../catalogos';
+import { carregarCatalogos, itens, nomeDe } from '../catalogos';
+import FichaIndicador from '../components/FichaIndicador.vue';
 
 const rota = useRoute();
 const id = computed(() => Number(rota.params.id));
@@ -13,7 +14,6 @@ const erro = ref('');
 const aviso = ref('');
 const responsaveis = ref<{ id: string; nome: string; papel: string }[]>([]);
 
-const PERIODICIDADES = ['semanal', 'mensal', 'trimestral', 'semestral', 'anual', 'unica'];
 
 async function carregar() {
   erro.value = '';
@@ -43,7 +43,7 @@ const editandoMeta = ref(false);
 const formMeta = reactive<any>({});
 function abrirMeta() {
   Object.assign(formMeta, { status: m.value.status, responsaveis: m.value.responsaveis, parceiros: m.value.parceiros,
-    prazo_inicio: m.value.prazo_inicio, prazo_fim: m.value.prazo_fim });
+    prazo_inicio: m.value.prazo_inicio, prazo_fim: m.value.prazo_fim, titulo: m.value.titulo, eixo: m.value.eixo, grupo: m.value.grupo });
   editandoMeta.value = true;
 }
 const salvarMeta = () => executar(async () => {
@@ -53,15 +53,12 @@ const salvarMeta = () => executar(async () => {
 
 // ---- indicadores
 const indicadorAberto = ref<number | 'novo' | null>(null);
-const formInd = reactive<any>({});
 function abrirIndicador(i: any | null) {
-  Object.assign(formInd, i ?? { nome: '', formula_numerador: '', formula_denominador: '', unidade: '', linha_base: null,
-    valor_alvo: null, fonte: '', periodicidade: '', responsavel: '', observacoes: '' });
   indicadorAberto.value = i ? i.id : 'novo';
 }
-const salvarIndicador = () => executar(async () => {
-  if (indicadorAberto.value === 'novo') await api(`/metas/${id.value}/indicadores`, { corpo: formInd });
-  else await api(`/indicadores/${indicadorAberto.value}`, { metodo: 'PUT', corpo: formInd });
+const salvarIndicador = (dados: Record<string, any>) => executar(async () => {
+  if (indicadorAberto.value === 'novo') await api(`/metas/${id.value}/indicadores`, { corpo: dados });
+  else await api(`/indicadores/${indicadorAberto.value}`, { metodo: 'PUT', corpo: dados });
   indicadorAberto.value = null;
 }, 'Ficha do indicador salva.');
 const apagarIndicador = async (i: any) => await confirmar({ titulo: 'Remover indicador?', texto: `"${i.nome}" e a ficha dele serão removidos.`, confirmar: 'Remover', perigo: true }) &&
@@ -122,6 +119,20 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
         <dt>Parceiros</dt><dd>{{ m.parceiros ?? '-' }}</dd>
       </dl>
       <form v-else class="grade duas" @submit.prevent="salvarMeta">
+        <template v-if="m.pode.editar_estrutura">
+          <label class="campo inteiro">Texto da meta <textarea v-model="formMeta.titulo" rows="2" class="texto"></textarea></label>
+          <label class="campo">Grupo responsável
+            <select v-model.number="formMeta.grupo">
+              <option v-for="(rotulo, g) in GRUPOS" :key="g" :value="Number(g)">{{ rotulo }}</option>
+            </select>
+          </label>
+          <label class="campo">Eixo
+            <select v-model="formMeta.eixo"><option v-for="(r, e) in EIXOS" :key="e" :value="e">{{ r }}</option></select>
+          </label>
+          <p v-if="formMeta.grupo !== m.grupo" class="aviso inteiro">
+            A meta passa do {{ GRUPOS[m.grupo] }} para o {{ GRUPOS[formMeta.grupo] }}. As ações e indicadores vão junto, e a mudança fica na auditoria.
+          </p>
+        </template>
         <label class="campo">Situação
           <select v-model="formMeta.status"><option v-for="(s, k) in STATUS" :key="k" :value="k">{{ s.rotulo }}</option></select>
         </label>
@@ -159,40 +170,17 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
           </div>
         </div>
         <dl v-if="indicadorAberto !== i.id" class="dados mini">
-          <dt>Fórmula</dt><dd>{{ i.formula_numerador ?? '-' }}<template v-if="i.formula_denominador"> ÷ {{ i.formula_denominador }}</template></dd>
-          <dt>Linha de base → alvo</dt><dd>{{ i.linha_base ?? '-' }} → {{ i.valor_alvo ?? '-' }} {{ i.unidade ?? '' }}</dd>
-          <dt>Fonte · periodicidade</dt><dd>{{ i.fonte ?? '-' }} · {{ i.periodicidade ?? '-' }}</dd>
-          <dt>Responsável</dt><dd>{{ i.responsavel ?? '-' }}</dd>
+          <dt>O que mede</dt><dd>{{ i.o_que_mede ?? '-' }}</dd>
+          <dt>Fórmula</dt><dd>{{ i.formula_numerador ?? '-' }}<template v-if="i.formula_denominador"> ÷ {{ i.formula_denominador }}</template> {{ i.unidade ? '(' + i.unidade + ')' : '' }}</dd>
+          <dt>Linha de base e meta</dt><dd>{{ i.linha_base ?? '-' }}<template v-if="i.linha_base_data"> ({{ i.linha_base_data }})</template> para {{ i.valor_alvo ?? '-' }}<template v-if="i.prazo_alvo"> até {{ i.prazo_alvo }}</template></dd>
+          <dt>Fonte e periodicidade</dt><dd>{{ i.fonte ?? '-' }} · {{ nomeDe('periodicidades', i.periodicidade) || '-' }}<template v-if="i.desagregacao"> · {{ nomeDe('desagregacoes', i.desagregacao) }}</template></dd>
+          <dt>Tipo</dt><dd>{{ nomeDe('tipos_indicador', i.tipo) || '-' }}</dd>
+          <dt>Responsáveis</dt><dd>coleta: {{ i.responsavel ?? '-' }} · validação: {{ i.responsavel_validacao ?? '-' }}</dd>
         </dl>
-        <form v-if="indicadorAberto === i.id" class="grade duas ficha" @submit.prevent="salvarIndicador">
-          <template v-if="!i.oficial"><label class="campo inteiro">Nome <input v-model="formInd.nome" required /></label></template>
-          <label class="campo">Numerador (o que se conta) <input v-model="formInd.formula_numerador" /></label>
-          <label class="campo">Denominador (sobre o quê) <input v-model="formInd.formula_denominador" placeholder="vazio se for contagem" /></label>
-          <label class="campo">Linha de base <input v-model="formInd.linha_base" type="number" step="any" /></label>
-          <label class="campo">Valor alvo <input v-model="formInd.valor_alvo" type="number" step="any" /></label>
-          <label class="campo">Unidade <input v-model="formInd.unidade" placeholder="%, nº, dias…" /></label>
-          <label class="campo">Periodicidade
-            <select v-model="formInd.periodicidade"><option value="">-</option><option v-for="p in PERIODICIDADES" :key="p" :value="p">{{ p }}</option></select>
-          </label>
-          <label class="campo">Fonte do dado <input v-model="formInd.fonte" placeholder="ex.: e-SUS APS, SINAN" /></label>
-          <label class="campo">Responsável pela coleta <input v-model="formInd.responsavel" /></label>
-          <label class="campo inteiro">Observações <textarea v-model="formInd.observacoes" rows="2" class="texto"></textarea></label>
-          <div class="acoes inteiro">
-            <button class="botao">Salvar ficha</button>
-            <button type="button" class="botao secundario" @click="indicadorAberto = null">Cancelar</button>
-          </div>
-        </form>
+        <FichaIndicador v-if="indicadorAberto === i.id" :inicial="i" :editar-nome="!i.oficial" @salvar="salvarIndicador" @cancelar="indicadorAberto = null" />
       </div>
 
-      <form v-if="indicadorAberto === 'novo'" class="grade duas ficha" @submit.prevent="salvarIndicador">
-        <label class="campo inteiro">Nome do novo indicador <input v-model="formInd.nome" required /></label>
-        <label class="campo">Numerador <input v-model="formInd.formula_numerador" /></label>
-        <label class="campo">Denominador <input v-model="formInd.formula_denominador" /></label>
-        <div class="acoes inteiro">
-          <button class="botao">Criar</button>
-          <button type="button" class="botao secundario" @click="indicadorAberto = null">Cancelar</button>
-        </div>
-      </form>
+      <FichaIndicador v-if="indicadorAberto === 'novo'" editar-nome rotulo-salvar="Criar indicador" @salvar="salvarIndicador" @cancelar="indicadorAberto = null" />
     </section>
 
     <!-- AÇÕES -->
