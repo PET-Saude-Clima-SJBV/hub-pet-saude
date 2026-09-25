@@ -45,7 +45,7 @@ const resumo = computed(() => {
     acoes: f.reduce((t, m) => t + m.n_acoes, 0),
   };
 });
-const prazo = (m: Meta) => m.prazo_inicio != null ? `mês ${m.prazo_inicio}–${m.prazo_fim}` : '—';
+const prazo = (m: Meta) => m.prazo_inicio != null ? `mês ${m.prazo_inicio}-${m.prazo_fim}` : '-';
 </script>
 
 <template>

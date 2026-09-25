@@ -1,4 +1,4 @@
-# Como contribuir — fluxo de branches
+# Como contribuir: fluxo de branches
 
 ## Resumo em uma imagem
 
@@ -17,7 +17,7 @@ Assim, o trabalho de um colega que ainda não foi aprovado não vai junto com o 
 
 ## Passo a passo
 
-### 1. Criar sua branch — sempre a partir da `main`
+### 1. Criar sua branch, sempre a partir da `main`
 
 ```bash
 git checkout main
@@ -62,10 +62,10 @@ O tutor mescla e a produção atualiza.
 
 ## Regras (o GitHub bloqueia se não seguir)
 
-- Ninguém faz `push` direto em `dev`, `hml` ou `main` — só por Pull Request.
+- Ninguém faz `push` direto em `dev`, `hml` ou `main`: só por Pull Request.
 - Todo PR precisa da aprovação do tutor.
 - PR para `hml` ou `main` **não pode** vir de `dev` nem de `hml`.
-- **Nunca** faça `git merge dev` ou `git merge hml` na sua branch — isso puxaria código não aprovado de colegas.
+- **Nunca** faça `git merge dev` ou `git merge hml` na sua branch. Isso puxaria código não aprovado de colegas.
   Se precisar atualizar sua branch, use a `main`: `git merge main`.
 
 ## E se o PR para `dev` der conflito?
@@ -107,6 +107,13 @@ Ao criar uma funcionalidade nova:
 3. **Frontend**: na rota, `meta: { func: 'minha_func' }`; no menu, `v-if="sessao.func.minha_func"`.
 
 A chave não substitui a permissão por papel: as duas valem ao mesmo tempo.
+
+## Padrão de texto
+
+- Não use travessão (—). Se precisar separar, use hífen (-), dois-pontos ou uma frase nova.
+- Texto objetivo e direto. Mensagem de alerta diz o que está acontecendo e o que fazer.
+- Não afirme o que o dado não mostra: dado ilustrativo é sempre rotulado como ilustrativo.
+- Aviso oficial (INMET, Defesa Civil) tem prioridade sobre qualquer regra nossa.
 
 ---
 

@@ -4,5 +4,5 @@ const COR: Record<string, string> = { escrita: 'azul', leitura: 'verde', admin: 
 </script>
 
 <template>
-  <span class="selo" :class="COR[nivel]">{{ nivel === 'nenhum' ? '—' : nivel }}</span>
+  <span class="selo" :class="COR[nivel]">{{ nivel === 'nenhum' ? '-' : nivel }}</span>
 </template>

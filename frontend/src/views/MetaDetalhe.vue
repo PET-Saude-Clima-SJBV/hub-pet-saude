@@ -89,7 +89,7 @@ const podeEditarAcao = (a: any) => {
   if (e === 'proprio') return a.criado_por === sessao.eu?.id || a.responsavel_id === sessao.eu?.id;
   return false;
 };
-const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—';
+const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-';
 </script>
 
 <template>
@@ -115,10 +115,10 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
         <button v-if="m.pode.editar_meta && !editandoMeta" class="botao secundario pequeno" @click="abrirMeta">Editar</button>
       </div>
       <dl v-if="!editandoMeta" class="dados">
-        <dt>Ações sugeridas (edital)</dt><dd>{{ m.acoes_sugeridas ?? '—' }}</dd>
-        <dt>Prazo</dt><dd>{{ m.prazo_inicio != null ? `do mês ${m.prazo_inicio} ao mês ${m.prazo_fim}` : '—' }}</dd>
-        <dt>Responsáveis</dt><dd>{{ m.responsaveis ?? '—' }}</dd>
-        <dt>Parceiros</dt><dd>{{ m.parceiros ?? '—' }}</dd>
+        <dt>Ações sugeridas (edital)</dt><dd>{{ m.acoes_sugeridas ?? '-' }}</dd>
+        <dt>Prazo</dt><dd>{{ m.prazo_inicio != null ? `do mês ${m.prazo_inicio} ao mês ${m.prazo_fim}` : '-' }}</dd>
+        <dt>Responsáveis</dt><dd>{{ m.responsaveis ?? '-' }}</dd>
+        <dt>Parceiros</dt><dd>{{ m.parceiros ?? '-' }}</dd>
       </dl>
       <form v-else class="grade duas" @submit.prevent="salvarMeta">
         <label class="campo">Situação
@@ -158,10 +158,10 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
           </div>
         </div>
         <dl v-if="indicadorAberto !== i.id" class="dados mini">
-          <dt>Fórmula</dt><dd>{{ i.formula_numerador ?? '—' }}<template v-if="i.formula_denominador"> ÷ {{ i.formula_denominador }}</template></dd>
-          <dt>Linha de base → alvo</dt><dd>{{ i.linha_base ?? '—' }} → {{ i.valor_alvo ?? '—' }} {{ i.unidade ?? '' }}</dd>
-          <dt>Fonte · periodicidade</dt><dd>{{ i.fonte ?? '—' }} · {{ i.periodicidade ?? '—' }}</dd>
-          <dt>Responsável</dt><dd>{{ i.responsavel ?? '—' }}</dd>
+          <dt>Fórmula</dt><dd>{{ i.formula_numerador ?? '-' }}<template v-if="i.formula_denominador"> ÷ {{ i.formula_denominador }}</template></dd>
+          <dt>Linha de base → alvo</dt><dd>{{ i.linha_base ?? '-' }} → {{ i.valor_alvo ?? '-' }} {{ i.unidade ?? '' }}</dd>
+          <dt>Fonte · periodicidade</dt><dd>{{ i.fonte ?? '-' }} · {{ i.periodicidade ?? '-' }}</dd>
+          <dt>Responsável</dt><dd>{{ i.responsavel ?? '-' }}</dd>
         </dl>
         <form v-if="indicadorAberto === i.id" class="grade duas ficha" @submit.prevent="salvarIndicador">
           <template v-if="!i.oficial"><label class="campo inteiro">Nome <input v-model="formInd.nome" required /></label></template>
@@ -171,7 +171,7 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
           <label class="campo">Valor alvo <input v-model="formInd.valor_alvo" type="number" step="any" /></label>
           <label class="campo">Unidade <input v-model="formInd.unidade" placeholder="%, nº, dias…" /></label>
           <label class="campo">Periodicidade
-            <select v-model="formInd.periodicidade"><option value="">—</option><option v-for="p in PERIODICIDADES" :key="p" :value="p">{{ p }}</option></select>
+            <select v-model="formInd.periodicidade"><option value="">-</option><option v-for="p in PERIODICIDADES" :key="p" :value="p">{{ p }}</option></select>
           </label>
           <label class="campo">Fonte do dado <input v-model="formInd.fonte" placeholder="ex.: e-SUS APS, SINAN" /></label>
           <label class="campo">Responsável pela coleta <input v-model="formInd.responsavel" /></label>
@@ -207,7 +207,7 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
         <label class="campo">Território / local <input v-model="formAcao.territorio" /></label>
         <label class="campo">Responsável
           <select v-model="formAcao.responsavel_id">
-            <option :value="null">—</option>
+            <option :value="null">-</option>
             <option v-for="r in responsaveis" :key="r.id" :value="r.id">{{ r.nome }}</option>
           </select>
         </label>
@@ -226,8 +226,8 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
         <tbody>
           <tr v-for="a in m.acoes" :key="a.id">
             <td><strong>{{ a.titulo }}</strong><div v-if="a.descricao" class="miudo">{{ a.descricao }}</div></td>
-            <td>{{ a.territorio ?? '—' }}</td>
-            <td>{{ a.responsavel_nome ?? '—' }}</td>
+            <td>{{ a.territorio ?? '-' }}</td>
+            <td>{{ a.responsavel_nome ?? '-' }}</td>
             <td>{{ data(a.prazo) }}</td>
             <td><span class="selo" :class="STATUS[a.status].cor">{{ STATUS[a.status].rotulo }}</span></td>
             <td class="acoes">

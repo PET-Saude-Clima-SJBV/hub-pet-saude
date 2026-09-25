@@ -31,7 +31,7 @@ const data = (s: string) => new Date(s).toLocaleString('pt-BR', { dateStyle: 'sh
             <td class="quando">{{ data(r.quando) }}</td>
             <td>{{ r.ator_nome }}</td>
             <td>{{ r.acao }}</td>
-            <td>{{ r.alvo_nome ?? '—' }}</td>
+            <td>{{ r.alvo_nome ?? '-' }}</td>
             <td><button v-if="r.detalhes" class="link" @click="aberto = aberto === r.id ? null : r.id">detalhes</button></td>
           </tr>
           <tr v-if="aberto === r.id"><td colspan="5"><pre>{{ JSON.stringify(r.detalhes, null, 2) }}</pre></td></tr>

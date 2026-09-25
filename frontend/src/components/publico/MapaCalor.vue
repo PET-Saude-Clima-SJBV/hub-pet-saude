@@ -41,12 +41,14 @@ onMounted(async () => {
   (window as any).L = L;
   await import('leaflet.heat');
   mapa = L.map(el.value, { center: CENTRO, zoom: 13, scrollWheelZoom: false, attributionControl: true });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  // mapa base do OpenStreetMap: gratuito e sem chave (exige só a atribuição e uso moderado)
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">colaboradores do OpenStreetMap</a>',
   }).addTo(mapa);
+  // maxZoom igual ao zoom inicial: a intensidade não "some" ao afastar o mapa
   (L as any).heatLayer(props.pontos ?? pontosIlustrativos(), {
-    radius: 28, blur: 22, maxZoom: 15,
+    radius: 30, blur: 24, maxZoom: 13, max: 1, minOpacity: 0.35,
     gradient: { 0.2: '#1D9E75', 0.45: '#E0A040', 0.7: '#E07A40', 0.95: '#E24B4A' },
   }).addTo(mapa);
 });

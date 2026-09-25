@@ -16,6 +16,7 @@ import { AtividadesController } from './atividades/atividades.controller';
 import { FuncionalidadeGuard, FuncionalidadesController, FuncionalidadesService } from './funcionalidades/funcionalidades';
 import { IntegracoesController, IntegracoesService } from './integracoes/integracoes';
 import { ClimaService } from './integracoes/clima/clima';
+import { AvisosInmetService } from './integracoes/inmet/avisos';
 import { SessaoOpcionalGuard } from './auth/guards';
 
 @Module({
@@ -26,7 +27,7 @@ import { SessaoOpcionalGuard } from './auth/guards';
   ],
   providers: [
     LogadoGuard, AdminGuard, SessaoOpcionalGuard, PermissoesService, FuncionalidadesService, FuncionalidadeGuard,
-    IntegracoesService, ClimaService,
+    IntegracoesService, AvisosInmetService, ClimaService,
   ],
 })
 class AppModule {}

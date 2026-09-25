@@ -147,7 +147,7 @@ async function alternarAtivo() {
         </label>
         <label class="campo">Grupo PET
           <select v-model="form.grupo">
-            <option :value="null">— nenhum / todos —</option>
+            <option :value="null">Nenhum (todos os grupos)</option>
             <option v-for="(rotulo, valor) in GRUPOS" :key="valor" :value="Number(valor)">{{ rotulo }}</option>
           </select>
         </label>

@@ -14,7 +14,7 @@ const erro = ref('');
 const salvo = ref('');
 const alterado = ref(false);
 
-const ROTULO_ESCOPO: Record<string, string> = { nenhum: '—', proprio: 'próprio', grupo: 'grupo', todos: 'todos' };
+const ROTULO_ESCOPO: Record<string, string> = { nenhum: '-', proprio: 'próprio', grupo: 'grupo', todos: 'todos' };
 
 onMounted(async () => {
   try {

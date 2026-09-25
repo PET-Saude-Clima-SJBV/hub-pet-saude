@@ -67,7 +67,7 @@ const nomeMes = computed(() => new Date(mes.value + '-15').toLocaleDateString('p
   <section class="cartao filtros">
     <label class="campo">Pessoa
       <select v-model="pessoaId">
-        <option v-for="p in pessoas" :key="p.id" :value="p.id">{{ p.nome }} — {{ PAPEIS[p.papel] }}{{ p.grupo ? ' · ' + GRUPOS[p.grupo] : '' }}</option>
+        <option v-for="p in pessoas" :key="p.id" :value="p.id">{{ p.nome }} ({{ PAPEIS[p.papel] }}{{ p.grupo ? ', ' + GRUPOS[p.grupo] : '' }})</option>
       </select>
     </label>
     <label class="campo">Mês <input v-model="mes" type="month" /></label>

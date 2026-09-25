@@ -22,7 +22,7 @@ onMounted(async () => {
 });
 
 const PARCEIROS = [
-  { nome: 'UNIFAE — Centro Universitário das Faculdades Associadas de Ensino', logo: '/logos/unifae.png' },
+  { nome: 'UNIFAE, Centro Universitário das Faculdades Associadas de Ensino', logo: '/logos/unifae.png' },
   { nome: 'Prefeitura de São João da Boa Vista', logo: '/logos/prefeitura-sjbv.png' },
   { nome: 'Instituto Federal de São Paulo, câmpus São João da Boa Vista', logo: '/logos/ifsp.png' },
   { nome: 'UNESP, câmpus de São João da Boa Vista', logo: '/logos/unesp.png' },
@@ -56,7 +56,7 @@ const PARCEIROS = [
         <div class="motivos">
           <div><strong>O que acontece agora</strong><span>A equipe está conferindo e atualizando as informações sobre clima e saúde no município.</span></div>
           <div><strong>Quando volta</strong><span>Em breve, com dados e informações atualizados para a população.</span></div>
-          <div><strong>Enquanto isso</strong><span>Em caso de calor extremo, chuva forte ou dúvidas de saúde, procure a UBS mais próxima.</span></div>
+          <div><strong>Enquanto isso</strong><span>Dúvidas de saúde: procure a UBS mais próxima. Emergência: Defesa Civil 199, SAMU 192, Bombeiros 193.</span></div>
         </div>
         <p class="assinatura">Equipe PET-Saúde: Clima · São João da Boa Vista</p>
       </div>
@@ -78,7 +78,7 @@ const PARCEIROS = [
           <h2>Mapa de calor do município</h2>
           <span class="selo ambar">dados ilustrativos</span>
         </div>
-        <p class="nota-mapa">Onde se concentram os casos acompanhados pelo projeto. Os territórios e os dados reais entram aqui assim que forem consolidados.</p>
+        <p class="nota-mapa">Distribuição ilustrativa por região da cidade. Os dados reais serão publicados quando os territórios do projeto forem definidos.</p>
         <MapaCalor />
       </section>
       <p v-if="estado === 'ok'" class="nota">Esta página mostra apenas dados agregados. Nenhuma informação pessoal é publicada.</p>

@@ -155,7 +155,7 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
         <label class="campo">Fim <input v-model="form.hora_fim" type="time" required /></label>
       </div>
       <div class="total" :class="{ invalido: form.hora_fim && minutosForm <= 0 }">
-        Duração: <strong>{{ minutosForm > 0 ? horas(minutosForm) : '—' }}</strong>
+        Duração: <strong>{{ minutosForm > 0 ? horas(minutosForm) : '-' }}</strong>
       </div>
       <div class="grade duas">
         <label class="campo">Tipo de atividade
@@ -177,7 +177,7 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
       </div>
       <label class="campo">Ação / meta relacionada
         <select v-model="form.acao_id">
-          <option value="">— nenhuma (atividade geral) —</option>
+          <option value="">Nenhuma (atividade geral)</option>
           <option v-for="a in acoes" :key="a.id" :value="a.id">{{ a.meta_codigo }} · {{ a.titulo }}</option>
         </select>
       </label>
@@ -229,7 +229,7 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
       <div class="dia-topo"><strong>{{ dataLonga(d.data) }}</strong><span>{{ horas(d.minutos) }}</span></div>
       <div v-for="a in d.lista" :key="a.id" class="cartao atividade">
         <div class="linha1">
-          <span class="hora">{{ a.hora_inicio }}–{{ a.hora_fim }}</span>
+          <span class="hora">{{ a.hora_inicio }}-{{ a.hora_fim }}</span>
           <strong>{{ TIPOS_ATIVIDADE[a.tipo] }}</strong>
           <span class="selo">{{ a.modalidade }}</span>
           <span v-if="a.meta_codigo" class="selo teal">{{ a.meta_codigo }} · {{ a.acao_titulo }}</span>

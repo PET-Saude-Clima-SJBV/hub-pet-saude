@@ -1,4 +1,4 @@
-# Arquitetura do HUB — decisões
+# Arquitetura do HUB: decisões
 
 Registro das decisões técnicas e do porquê. Quando uma decisão mudar, atualize aqui (com a data).
 
@@ -15,7 +15,7 @@ O Nuxt é excelente, mas o que ele acrescenta não é o que o HUB precisa agora:
 | Renderização no servidor (SSR) e SEO | Quase todo o HUB é área logada: SEO não se aplica. A página pública é uma só. |
 | Servidor próprio (Nitro, rotas de API) | Já temos a API NestJS. Seria um segundo backend, duplicando regras e segurança. |
 | Rotas por pasta, auto-imports | Conveniente, mas é "mágica" a mais para quem está aprendendo. |
-| — | SSR adiciona uma classe de bugs (hidratação, código rodando em servidor e navegador). |
+| - | SSR adiciona uma classe de bugs (hidratação, código rodando em servidor e navegador). |
 
 **Quando reconsiderar:** se o **portal público** crescer (muitas páginas, notícias, boletins, SEO importante),
 ele vira uma **aplicação separada** em Nuxt (ou Astro), consumindo a mesma API. O HUB interno continua SPA.
