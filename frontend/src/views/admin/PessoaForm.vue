@@ -42,9 +42,9 @@ watch(() => form.perfil, () => { if (novo.value) aplicarPadrao(); });
 
 type Nivel = Permissao['banco'];
 const ATALHOS: { nome: string; dica: string; p: Record<string, [boolean, Nivel, boolean]> }[] = [
-  { nome: 'Iniciante', dica: 'HUB dev e hml, lê o banco do dev', p: { dev: [true, 'leitura', true], hml: [true, 'nenhum', false], prod: [false, 'nenhum', false] } },
-  { nome: 'Padrão', dica: 'escreve no dev, lê o hml', p: { dev: [true, 'escrita', true], hml: [true, 'leitura', true], prod: [false, 'nenhum', false] } },
-  { nome: 'Avançado', dica: 'escreve no dev e no hml', p: { dev: [true, 'escrita', true], hml: [true, 'escrita', true], prod: [false, 'nenhum', false] } },
+  { nome: 'Iniciante', dica: 'HUB em todos, lê o banco do dev', p: { dev: [true, 'leitura', true], hml: [true, 'nenhum', false], prod: [true, 'nenhum', false] } },
+  { nome: 'Padrão', dica: 'HUB em todos, escreve no dev, lê o hml', p: { dev: [true, 'escrita', true], hml: [true, 'leitura', true], prod: [true, 'nenhum', false] } },
+  { nome: 'Avançado', dica: 'HUB em todos, escreve no dev e no hml', p: { dev: [true, 'escrita', true], hml: [true, 'escrita', true], prod: [true, 'nenhum', false] } },
 ];
 function aplicarAtalho(a: (typeof ATALHOS)[number]) {
   for (const p of form.permissoes) [p.hub, p.banco, p.servidor] = a.p[p.ambiente];
@@ -125,7 +125,7 @@ async function alternarAtivo() {
           <label v-for="(rotulo, valor) in PERFIS" :key="valor" class="perfil" :class="{ marcado: form.perfil === valor }">
             <input v-model="form.perfil" type="radio" :value="valor" />
             <strong>{{ rotulo }}</strong>
-            <small v-if="valor === 'desenvolvedor'">Constrói o HUB: dev e hml, banco, servidor e GitHub conforme liberado.</small>
+            <small v-if="valor === 'desenvolvedor'">Constrói e testa o HUB (dev e hml) e também o usa no prod. Banco, servidor e GitHub conforme liberado.</small>
             <small v-else>Usa o HUB para registrar atividades, metas e ações. Sem acesso técnico.</small>
           </label>
         </div>

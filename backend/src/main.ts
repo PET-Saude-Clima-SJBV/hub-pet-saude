@@ -10,11 +10,13 @@ import { AuthController } from './auth/auth.controller';
 import { UsuariosController } from './usuarios/usuarios.controller';
 import { PublicoController, SaudeController } from './publico/publico.controller';
 import { AdminGuard, LogadoGuard } from './auth/guards';
+import { PermissoesController, PermissoesService } from './permissoes/permissoes';
+import { MetasController } from './metas/metas.controller';
 
 @Module({
   imports: [DbModule, JwtModule.register({ secret: config.jwtSegredo })],
-  controllers: [AuthController, UsuariosController, PublicoController, SaudeController],
-  providers: [LogadoGuard, AdminGuard],
+  controllers: [AuthController, UsuariosController, PublicoController, SaudeController, PermissoesController, MetasController],
+  providers: [LogadoGuard, AdminGuard, PermissoesService],
 })
 class AppModule {}
 

@@ -28,11 +28,12 @@ interface UsuarioIn {
 
 /** Acessos com que cada perfil nasce, quando o cadastro não informa nada. */
 export const PADRAO_POR_PERFIL: Record<string, PermissaoIn[]> = {
-  // desenvolvedor do Grupo II: trabalha no dev e no hml; prod é só do administrador
+  // desenvolvedor do Grupo II: desenvolve e testa no dev e no hml, e também USA o HUB no prod
+  // (registra as próprias atividades); acesso técnico ao prod é só do administrador
   desenvolvedor: [
     { ambiente: 'dev', hub: true, banco: 'escrita', servidor: true },
     { ambiente: 'hml', hub: true, banco: 'leitura', servidor: true },
-    { ambiente: 'prod', hub: false, banco: 'nenhum', servidor: false },
+    { ambiente: 'prod', hub: true, banco: 'nenhum', servidor: false },
   ],
   // usuário do sistema (Grupos I, III, IV, V): só usa o HUB de produção, sem acesso técnico
   usuario: [

@@ -25,7 +25,7 @@ export const PAPEIS: Record<string, string> = {
   aluno: 'Aluno',
   preceptor: 'Preceptor',
   tutor: 'Tutor',
-  coordenador: 'Coordenador',
+  coordenador: 'Coordenador do grupo',
   coordenacao_geral: 'Coordenação geral',
   externo: 'Externo',
 };
@@ -41,7 +41,16 @@ export const PERFIS: Record<string, string> = {
   usuario: 'Usuário do sistema',
 };
 
-export const GRUPOS: Record<number, string> = { 1: 'PET I', 2: 'PET II', 3: 'PET III', 4: 'PET IV', 5: 'PET V' };
+export const STATUS: Record<string, { rotulo: string; cor: string }> = {
+  nao_iniciado: { rotulo: 'Não iniciado', cor: '' },
+  em_andamento: { rotulo: 'Em andamento', cor: 'azul' },
+  em_atraso: { rotulo: 'Em atraso', cor: 'vermelho' },
+  concluido: { rotulo: 'Concluído', cor: 'verde' },
+};
+
+export const EIXOS: Record<string, string> = { I: 'Eixo I', II: 'Eixo II', III: 'Eixo III' };
+
+export const GRUPOS: Record<number, string> ={ 1: 'PET I', 2: 'PET II', 3: 'PET III', 4: 'PET IV', 5: 'PET V' };
 
 export interface Permissao { ambiente: string; hub: boolean; banco: 'nenhum' | 'leitura' | 'escrita'; servidor: boolean }
 export interface Pessoa {

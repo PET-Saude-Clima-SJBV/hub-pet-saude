@@ -25,9 +25,14 @@ async function logout() {
       <div class="marca">HUB <span>PET-Saúde</span></div>
       <nav>
         <RouterLink to="/inicio">Minha área</RouterLink>
+        <template v-if="['grupo', 'todos'].includes(sessao.pode['metas.ver'])">
+          <div class="grupo">Projeto</div>
+          <RouterLink to="/metas">Metas e ações</RouterLink>
+        </template>
         <template v-if="sessao.eu?.admin_sistema">
           <div class="grupo">Administração</div>
           <RouterLink to="/admin/pessoas">Pessoas e acessos</RouterLink>
+          <RouterLink to="/admin/permissoes">Permissões por papel</RouterLink>
           <RouterLink to="/admin/sincronizacao">Sincronização</RouterLink>
           <RouterLink to="/admin/auditoria">Auditoria</RouterLink>
         </template>
