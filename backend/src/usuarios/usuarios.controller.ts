@@ -59,7 +59,7 @@ function validar(d: UsuarioIn, novo: boolean) {
   if (novo || d.email !== undefined) if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email ?? '')) erro('E-mail inválido');
   if (novo || d.papel !== undefined) if (!PAPEIS.includes(d.papel ?? '')) erro('Papel inválido');
   if (d.perfil !== undefined && !PERFIS.includes(d.perfil)) erro('Perfil inválido');
-  if (d.grupo != null && !(Number.isInteger(d.grupo) && d.grupo >= 1 && d.grupo <= 5)) erro('Grupo deve ser de 1 a 5');
+  if (d.grupo != null && !(Number.isInteger(d.grupo) && d.grupo >= 1)) erro('Grupo inválido');
   if (d.github_permissao !== undefined && !NIVEIS_GITHUB.includes(d.github_permissao)) erro('Permissão GitHub inválida');
   if (d.github_usuario && !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(d.github_usuario)) erro('Usuário GitHub inválido');
   if (d.usuario_servidor && !/^[a-z][a-z0-9_]{2,30}$/.test(d.usuario_servidor))
@@ -120,6 +120,7 @@ export class UsuariosController {
     d.vinculo = await this.cat.exigir('vinculos', valor('vinculo'), 'o vínculo', true);
     d.instituicao = await this.cat.exigir('instituicoes', valor('instituicao'), 'a instituição', true);
     d.curso = await this.cat.exigir('cursos', valor('curso'), 'o curso', true);
+    if (d.grupo != null) await this.cat.exigir('grupos', String(d.grupo), 'o grupo', true);
     if (d.curso && d.instituicao) {
       const c = await this.db.um(`SELECT pai_codigo FROM hub.catalogo_itens WHERE catalogo = 'cursos' AND codigo = $1`, [d.curso]);
       if (c?.pai_codigo && c.pai_codigo !== d.instituicao) throw new BadRequestException('Este curso não é da instituição escolhida');

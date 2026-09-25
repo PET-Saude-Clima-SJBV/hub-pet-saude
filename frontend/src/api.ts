@@ -60,7 +60,8 @@ export const horas = (min: number) => `${Math.floor(min / 60)}h${String(min % 60
 
 export const EIXOS: Record<string, string>= { I: 'Eixo I', II: 'Eixo II', III: 'Eixo III' };
 
-export const GRUPOS: Record<number, string> ={ 1: 'PET I', 2: 'PET II', 3: 'PET III', 4: 'PET IV', 5: 'PET V' };
+// grupos PET vêm do cadastro "Grupos PET" (ver catalogos.ts); reexportado aqui por conveniência
+export { GRUPOS } from './catalogos';
 
 export interface Permissao { ambiente: string; hub: boolean; banco: 'nenhum' | 'leitura' | 'escrita'; servidor: boolean }
 export interface Pessoa {

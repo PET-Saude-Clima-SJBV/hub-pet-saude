@@ -144,10 +144,11 @@ export class AtividadesController {
       const id = await this.db.transacao(async (c) => {
         const { rows } = await c.query(
           `INSERT INTO hub.atividades (usuario_id, grupo, data, hora_inicio, hora_fim, tipo, modalidade, territorio,
-             acao_id, descricao, status, territorio_codigo)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+             acao_id, descricao, status, territorio_codigo, dispositivo, dispositivo_detalhe, user_agent)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
           [u.id, u.grupo, d.data, d.hora_inicio, d.hora_fim, d.tipo, d.modalidade, d.territorio?.trim() || null,
-            acaoId, d.descricao!.trim(), d.status || 'concluido', d.territorio_codigo || null]);
+            acaoId, d.descricao!.trim(), d.status || 'concluido', d.territorio_codigo || null,
+            u.dispositivo?.tipo ?? 'desconhecido', u.dispositivo?.detalhe ?? null, u.dispositivo?.userAgent ?? null]);
         await this.gravarEvidencias(c, rows[0].id, arquivos, links);
         return rows[0].id as string;
       });

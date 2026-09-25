@@ -18,6 +18,10 @@ const USO: Record<string, [string, string][]> = {
   vinculos: [['hub.usuarios', 'vinculo']],
   instituicoes: [['hub.usuarios', 'instituicao'], ['hub.catalogo_itens', 'pai_codigo']],
   cursos: [['hub.usuarios', 'curso']],
+  grupos: [['hub.usuarios', 'grupo'], ['hub.metas', 'grupo']],
+  periodicidades: [['hub.indicadores', 'periodicidade']],
+  desagregacoes: [['hub.indicadores', 'desagregacao']],
+  tipos_indicador: [['hub.indicadores', 'tipo']],
 };
 
 const COLUNAS_IMPORTACAO: Coluna[] = [
@@ -66,7 +70,7 @@ export class CatalogosService {
     const r = new Map<string, number>();
     for (const [tabela, coluna] of USO[catalogo] ?? []) {
       const extra = tabela === 'hub.catalogo_itens' ? `AND catalogo = 'cursos'` : '';
-      const linhas = await this.db.query(`SELECT ${coluna} AS codigo, count(*)::int AS n FROM ${tabela} WHERE ${coluna} IS NOT NULL ${extra} GROUP BY 1`);
+      const linhas = await this.db.query(`SELECT ${coluna}::text AS codigo, count(*)::int AS n FROM ${tabela} WHERE ${coluna} IS NOT NULL ${extra} GROUP BY 1`);
       for (const l of linhas) r.set(l.codigo, (r.get(l.codigo) ?? 0) + l.n);
     }
     return r;
@@ -257,6 +261,6 @@ export class CatalogosController {
       await registrarAuditoria(this.db, u, `cadastro "${catalogo.nome}": importou ${f.originalname}`, null,
         { criados: relatorio.criar.length, atualizados: relatorio.atualizar.length, iguais: relatorio.iguais });
     }
-    return { aplicado: aplicar, linhas: tabela.linhas.length, ...relatorio };
+    return { aplicado: aplicar, linhas: tabela.linhas.length, colunas_ignoradas: tabela.ignoradas, ...relatorio };
   }
 }

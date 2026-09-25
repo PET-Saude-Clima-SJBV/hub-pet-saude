@@ -78,3 +78,12 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: .9rem; }
 @media (min-width: 720px) {
   .grade.duas { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---- celular primeiro: toque confortável e sem zoom automático ---- */
+@media (max-width: 640px) {
+  input, select, textarea { font-size: 16px; }   /* abaixo de 16px o iPhone dá zoom ao tocar no campo */
+  .botao { min-height: 44px; justify-content: center; }
+  h1 { font-size: 1.3rem; }
+  .cartao { padding: 1rem; }
+  .tabela th, .tabela td { padding: .55rem .5rem; }
+}

@@ -4,6 +4,7 @@ import { api, GRUPOS, horas, PAPEIS } from '../api';
 import { carregarCatalogos, nomeDe } from '../catalogos';
 import { pedirTexto } from '../dialogo';
 import Avatar from '../components/Avatar.vue';
+import Dispositivo from '../components/Dispositivo.vue';
 
 interface Atividade {
   id: string; data: string; hora_inicio: string; hora_fim: string; minutos: number; tipo: string; modalidade: string;
@@ -124,7 +125,7 @@ const semanaTexto = (s: string) => {
       <tbody>
         <tr v-for="a in c.atividades" :key="a.id">
           <td><input type="checkbox" :checked="marcadas.has(a.id)" :disabled="!a.evidencias.length" @change="alternar(a.id)" /></td>
-          <td class="quando">{{ new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }) }}<br />{{ a.hora_inicio }}-{{ a.hora_fim }}</td>
+          <td class="quando">{{ new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }) }}<br />{{ a.hora_inicio }}-{{ a.hora_fim }}<br /><Dispositivo :tipo="(a as any).dispositivo" :detalhe="(a as any).dispositivo_detalhe" /></td>
           <td>
             <strong>{{ nomeDe('tipos_atividade', a.tipo) }}</strong> · {{ nomeDe('modalidades', a.modalidade) }}<template v-if="(a as any).territorio_nome || a.territorio"> · {{ [(a as any).territorio_nome, a.territorio].filter(Boolean).join(', ') }}</template>
             <span v-if="a.meta_codigo" class="selo teal">{{ a.meta_codigo }}</span>

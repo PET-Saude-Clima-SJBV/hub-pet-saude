@@ -4,15 +4,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { api } from '../../api';
 import { confirmar } from '../../dialogo';
 import { carregarCatalogos } from '../../catalogos';
+import ImportarArquivo from '../../components/ImportarArquivo.vue';
 
 interface Catalogo { chave: string; nome: string; descricao: string; pai: string | null; total: number; ativos: number }
 interface Item {
   catalogo: string; codigo: string; nome: string; sigla: string | null; descricao: string | null; pai_codigo: string | null;
   ativo: boolean; ordem: number; sistema: boolean; uso: number;
-}
-interface Relatorio {
-  aplicado: boolean; linhas: number; iguais: number;
-  criar: (Item & { linha: number })[]; atualizar: (Item & { linha: number; antes: string })[]; erros: { linha: number; mensagem: string }[];
 }
 
 const rota = useRoute();
@@ -43,7 +40,7 @@ onMounted(async () => {
 });
 watch(chave, async (c) => {
   router.replace({ query: { c } });
-  editando.value = null; relatorio.value = null; arquivo.value = null; busca.value = ''; filtroPai.value = '';
+  editando.value = null; busca.value = ''; filtroPai.value = '';
   await carregarItens();
 });
 
@@ -100,32 +97,6 @@ async function apagar(i: Item) {
   } catch (e) { erro.value = (e as Error).message; }
 }
 
-// ---- importação
-const arquivo = ref<File | null>(null);
-const relatorio = ref<Relatorio | null>(null);
-const importando = ref(false);
-const inputArquivo = ref<HTMLInputElement | null>(null);
-function escolher(ev: Event) {
-  arquivo.value = (ev.target as HTMLInputElement).files?.[0] ?? null;
-  relatorio.value = null;
-  if (arquivo.value) enviar(true);
-}
-async function enviar(simular: boolean) {
-  if (!arquivo.value) return;
-  importando.value = true;
-  erro.value = aviso.value = '';
-  try {
-    const fd = new FormData();
-    fd.append('arquivo', arquivo.value);
-    relatorio.value = await api<Relatorio>(`/admin/catalogos/${chave.value}/importar?simular=${simular ? 1 : 0}`, { corpo: fd });
-    if (!simular) {
-      await depois(`Importação concluída: ${relatorio.value.criar.length} criado(s), ${relatorio.value.atualizar.length} atualizado(s).`);
-      arquivo.value = null; relatorio.value = null;
-      if (inputArquivo.value) inputArquivo.value.value = '';
-    }
-  } catch (e) { erro.value = (e as Error).message; relatorio.value = null; }
-  finally { importando.value = false; }
-}
 </script>
 
 <template>
@@ -207,43 +178,9 @@ async function enviar(simular: boolean) {
         </div>
       </div>
 
-      <div class="cartao importar">
-        <h2>Importar de arquivo</h2>
-        <p class="miudo">
-          Baixe o modelo, preencha e envie. Itens com o mesmo código (ou, sem código, o mesmo nome) são atualizados; os demais são criados.
-          Nada é gravado antes da sua confirmação.
-        </p>
-        <div class="modelos">
-          <span>Modelo:</span>
-          <a class="botao secundario pequeno" :href="`/api/admin/catalogos/${chave}/modelo?formato=xlsx`">XLSX</a>
-          <a class="botao secundario pequeno" :href="`/api/admin/catalogos/${chave}/modelo?formato=csv`">CSV</a>
-          <a class="botao secundario pequeno" :href="`/api/admin/catalogos/${chave}/modelo?formato=txt`">TXT</a>
-        </div>
-        <input ref="inputArquivo" type="file" accept=".xlsx,.csv,.txt" @change="escolher" />
-
-        <div v-if="importando" class="miudo">Conferindo o arquivo...</div>
-        <div v-if="relatorio && !relatorio.aplicado" class="relatorio">
-          <div class="totais">
-            <span class="selo verde">{{ relatorio.criar.length }} novos</span>
-            <span class="selo azul">{{ relatorio.atualizar.length }} atualizados</span>
-            <span class="selo">{{ relatorio.iguais }} sem mudança</span>
-            <span class="selo" :class="relatorio.erros.length ? 'vermelho' : ''">{{ relatorio.erros.length }} erros</span>
-          </div>
-          <ul v-if="relatorio.erros.length" class="erros">
-            <li v-for="e in relatorio.erros" :key="e.linha">Linha {{ e.linha }}: {{ e.mensagem }}</li>
-          </ul>
-          <ul v-if="relatorio.criar.length || relatorio.atualizar.length" class="mudancas">
-            <li v-for="i in relatorio.criar" :key="'c' + i.codigo"><span class="selo verde">novo</span> {{ i.nome }} <code>{{ i.codigo }}</code></li>
-            <li v-for="i in relatorio.atualizar" :key="'a' + i.codigo"><span class="selo azul">atualiza</span> {{ i.antes }}<template v-if="i.antes !== i.nome"> para {{ i.nome }}</template> <code>{{ i.codigo }}</code></li>
-          </ul>
-          <div class="acoes">
-            <button class="botao" :disabled="!!relatorio.erros.length || (!relatorio.criar.length && !relatorio.atualizar.length) || importando" @click="enviar(false)">
-              Confirmar importação
-            </button>
-            <span v-if="relatorio.erros.length" class="miudo">Corrija os erros no arquivo e envie de novo.</span>
-          </div>
-        </div>
-      </div>
+      <ImportarArquivo :key="chave" :url-modelo="`/api/admin/catalogos/${chave}/modelo`" :url-importar="`/admin/catalogos/${chave}/importar`"
+        explicacao="Baixe o modelo, preencha e envie. Itens com o mesmo código (ou, sem código, o mesmo nome) são atualizados; os demais são criados. Nada é gravado antes da sua confirmação."
+        @importado="depois" />
     </section>
   </div>
 </template>
@@ -274,13 +211,4 @@ async function enviar(simular: boolean) {
 .inativo { opacity: .55; }
 .selo { margin-left: .35rem; }
 .miudo { font-size: .8rem; color: var(--texto-2); margin: .2rem 0 0; }
-.importar { display: flex; flex-direction: column; gap: .7rem; }
-.importar h2 { margin: 0; }
-.modelos { display: flex; gap: .4rem; align-items: center; font-size: .85rem; }
-.pequeno { padding: .3rem .7rem; font-size: .8rem; }
-.relatorio { border-top: 1px solid var(--borda); padding-top: .75rem; display: flex; flex-direction: column; gap: .6rem; }
-.totais { display: flex; gap: .3rem; flex-wrap: wrap; }
-.totais .selo { margin: 0; }
-.erros { margin: 0; padding-left: 1.2rem; color: #B3302F; font-size: .85rem; }
-.mudancas { margin: 0; padding: 0; list-style: none; font-size: .85rem; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: .25rem; }
 </style>

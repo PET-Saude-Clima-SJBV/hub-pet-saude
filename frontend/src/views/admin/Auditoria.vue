@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { api } from '../../api';
+import Dispositivo from '../../components/Dispositivo.vue';
 
 interface Registro { id: number; quando: string; ator_nome: string; acao: string; alvo_nome: string | null; detalhes: any }
 const registros = ref<Registro[]>([]);
@@ -24,7 +25,7 @@ const data = (s: string) => new Date(s).toLocaleString('pt-BR', { dateStyle: 'sh
 
   <section class="cartao rolagem">
     <table class="tabela">
-      <thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Sobre</th><th></th></tr></thead>
+      <thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Sobre</th><th>Dispositivo</th><th></th></tr></thead>
       <tbody>
         <template v-for="r in registros" :key="r.id">
           <tr>
@@ -32,9 +33,10 @@ const data = (s: string) => new Date(s).toLocaleString('pt-BR', { dateStyle: 'sh
             <td>{{ r.ator_nome }}</td>
             <td>{{ r.acao }}</td>
             <td>{{ r.alvo_nome ?? '-' }}</td>
+            <td><Dispositivo :tipo="(r as any).dispositivo" :detalhe="(r as any).dispositivo_detalhe" com-texto /></td>
             <td><button v-if="r.detalhes" class="link" @click="aberto = aberto === r.id ? null : r.id">detalhes</button></td>
           </tr>
-          <tr v-if="aberto === r.id"><td colspan="5"><pre>{{ JSON.stringify(r.detalhes, null, 2) }}</pre></td></tr>
+          <tr v-if="aberto === r.id"><td colspan="6"><pre>{{ JSON.stringify(r.detalhes, null, 2) }}</pre></td></tr>
         </template>
       </tbody>
     </table>

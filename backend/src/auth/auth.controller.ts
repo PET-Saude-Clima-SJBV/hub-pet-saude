@@ -1,10 +1,11 @@
 import {
   BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, NotFoundException, Param,
-  ParseUUIDPipe, Post, Res, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors,
+  ParseUUIDPipe, Post, Req, Res, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { identificarDispositivo } from '../auditoria/dispositivo';
 import { randomUUID } from 'crypto';
 import { mkdirSync } from 'fs';
 import { join } from 'path';
@@ -48,7 +49,7 @@ export class AuthController {
 
   @Post('auth/login')
   @HttpCode(200)
-  async login(@Body() body: { email?: string; senha?: string }, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() body: { email?: string; senha?: string }, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const email = (body.email ?? '').trim().toLowerCase();
     const u = await this.db.um(
       `SELECT id, nome, senha_hash, ${PODE_ENTRAR_AQUI} AS pode_entrar FROM hub.usuarios u WHERE email = $1`, [email],
@@ -61,7 +62,7 @@ export class AuthController {
       throw new UnauthorizedException(`Você não tem acesso ao HUB do ambiente ${config.ambiente}. Fale com o tutor.`);
     }
     await this.db.query('UPDATE hub.usuarios SET ultimo_login = now() WHERE id = $1', [u.id]);
-    await registrarAuditoria(this.db, { id: u.id, nome: u.nome }, 'login', null);
+    await registrarAuditoria(this.db, { id: u.id, nome: u.nome, dispositivo: identificarDispositivo(req.headers) }, 'login', null);
     await this.abrirSessao(res, { sub: u.id });
     return { ok: true };
   }

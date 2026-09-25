@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
 import { carregarSessao, sessao } from './sessao';
 import { api } from './api';
+import { carregarCatalogos } from './catalogos';
 import './estilo.css';
 
 const router = createRouter({
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: '/inicio', component: () => import('./views/Inicio.vue') },
     { path: '/metas', component: () => import('./views/Metas.vue'), meta: { func: 'metas' } },
     { path: '/metas/:id', component: () => import('./views/MetaDetalhe.vue'), meta: { func: 'metas' } },
+    { path: '/indicadores', component: () => import('./views/Indicadores.vue'), meta: { func: 'metas' } },
     { path: '/atividades', component: () => import('./views/Atividades.vue'), meta: { func: 'atividades' } },
     { path: '/atividades/validacao', component: () => import('./views/Validacao.vue'), meta: { func: 'atividades' } },
     { path: '/atividades/resumo', component: () => import('./views/Resumo.vue'), meta: { func: 'atividades' } },
@@ -34,6 +36,7 @@ router.beforeEach(async (to) => {
   if (!sessao.carregada) await carregarSessao();
   if (to.meta.publica) return true;
   if (!sessao.eu) return { path: '/login', query: { volta: to.fullPath } };
+  carregarCatalogos().catch(() => {}); // listas dos formulários (uma vez por sessão)
   if (to.meta.admin && !sessao.eu.admin_sistema) return '/inicio';
   if (to.meta.func && !sessao.func[to.meta.func as string]) return '/inicio'; // funcionalidade desligada
   return true;

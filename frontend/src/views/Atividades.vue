@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { api, horas, STATUS, VALIDACAO } from '../api';
 import { carregarCatalogos, itens, nomeDe } from '../catalogos';
 import { confirmar } from '../dialogo';
+import Dispositivo from '../components/Dispositivo.vue';
 
 interface Evidencia { id: string; tipo: 'arquivo' | 'link'; nome: string; url: string | null; mime: string | null; tamanho: number | null }
 interface Atividade {
@@ -194,7 +195,15 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
       <fieldset v-if="!editando" class="evidencia" :class="{ falta: !temEvidencia }">
         <legend>Evidência <span class="obrigatorio">obrigatória</span></legend>
         <p class="miudo">Foto, PDF (até 5 arquivos de 10 MB) ou link (ata, documento, publicação).</p>
-        <input ref="inputArquivo" type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" @change="adicionarArquivos" />
+        <div class="botoes-evidencia">
+          <!-- no celular abre a câmera direto; no computador abre a escolha de arquivo -->
+          <label class="botao secundario">📷 Tirar foto
+            <input type="file" accept="image/*" capture="environment" hidden @change="adicionarArquivos" />
+          </label>
+          <label class="botao secundario">📎 Anexar arquivo
+            <input ref="inputArquivo" type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" hidden @change="adicionarArquivos" />
+          </label>
+        </div>
         <ul v-if="arquivos.length" class="lista">
           <li v-for="(f, i) in arquivos" :key="i">📎 {{ f.name }} <small>{{ kb(f.size) }}</small>
             <button type="button" class="link perigo" @click="arquivos.splice(i, 1)">tirar</button></li>
@@ -238,6 +247,7 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
       <div v-for="a in d.lista" :key="a.id" class="cartao atividade">
         <div class="linha1">
           <span class="hora">{{ a.hora_inicio }}-{{ a.hora_fim }}</span>
+          <Dispositivo :tipo="(a as any).dispositivo" :detalhe="(a as any).dispositivo_detalhe" />
           <strong>{{ nomeDe('tipos_atividade', a.tipo) }}</strong>
           <span class="selo">{{ nomeDe('modalidades', a.modalidade) }}</span>
           <span v-if="a.territorio_nome || a.territorio" class="selo">{{ [a.territorio_nome, a.territorio].filter(Boolean).join(', ') }}</span>
@@ -282,6 +292,12 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
 .evidencia { border: 1px dashed var(--teal-700); border-radius: 10px; padding: .8rem 1rem; display: flex; flex-direction: column; gap: .5rem; }
 .evidencia.falta { border-color: var(--ambar); background: #FFFBF3; }
 .evidencia legend { font-weight: 700; font-size: .9rem; padding: 0 .3rem; }
+.botoes-evidencia { display: flex; gap: .5rem; flex-wrap: wrap; }
+.botoes-evidencia .botao { cursor: pointer; }
+@media (max-width: 640px) {
+  .botoes-evidencia .botao { flex: 1; }
+  .registro > .acoes .botao { width: 100%; }
+}
 .obrigatorio { font-size: .72rem; color: #8A5A10; background: #FDF3E1; border-radius: 999px; padding: .05rem .45rem; margin-left: .3rem; }
 .lista { list-style: none; margin: 0; padding: 0; font-size: .88rem; }
 .link-linha { display: grid; grid-template-columns: 2fr 1.3fr auto; gap: .4rem; }

@@ -89,7 +89,7 @@ onBeforeUnmount(() => mapa?.remove());
     </div>
 
     <div class="moldura">
-      <div ref="el" class="mapa" :style="{ height: props.altura + 'px' }" role="img"
+      <div ref="el" class="mapa" :style="{ height: `min(${props.altura}px, 62vh)` }" role="img"
         :aria-label="ativa ? `Mapa de ${ativa.nome} em São João da Boa Vista` : 'Mapa de problemas e doenças'"></div>
       <div v-if="carregando" class="carregando">Carregando camada...</div>
     </div>
@@ -106,6 +106,11 @@ onBeforeUnmount(() => mapa?.remove());
 @media (max-width: 760px) { .seletor { grid-template-columns: 1fr; } }
 .rotulo-grupo { display: block; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--texto-2); margin-bottom: .35rem; }
 .opcoes { display: flex; flex-wrap: wrap; gap: .35rem; }
+@media (max-width: 640px) {
+  /* no celular: uma faixa com rolagem lateral, sem empurrar o mapa para baixo */
+  .opcoes { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .3rem; scrollbar-width: thin; }
+  .opcao { white-space: nowrap; flex-shrink: 0; min-height: 40px; }
+}
 .opcao { display: inline-flex; align-items: center; gap: .4rem; border: 1px solid var(--borda); background: #fff; border-radius: 999px;
   padding: .35rem .75rem; font: inherit; font-size: .84rem; cursor: pointer; color: var(--texto); }
 .opcao:hover { border-color: var(--cor); }

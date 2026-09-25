@@ -6,12 +6,19 @@ export interface ItemCatalogo { codigo: string; nome: string; sigla: string | nu
 
 export const catalogos = reactive<{ carregado: boolean; itens: Record<string, ItemCatalogo[]> }>({ carregado: false, itens: {} });
 
+/** Grupos PET (número -> nome). Começa com os 5 do edital e é atualizado pelo cadastro. */
+export const GRUPOS = reactive<Record<number, string>>({ 1: 'PET I', 2: 'PET II', 3: 'PET III', 4: 'PET IV', 5: 'PET V' });
+
 let carregando: Promise<void> | null = null;
 export function carregarCatalogos(forcar = false) {
   if (forcar) carregando = null;
   return (carregando ??= api<Record<string, ItemCatalogo[]>>('/catalogos').then((r) => {
     catalogos.itens = r;
     catalogos.carregado = true;
+    if (r.grupos?.length) {
+      for (const k of Object.keys(GRUPOS)) delete GRUPOS[Number(k)];
+      for (const g of r.grupos) GRUPOS[Number(g.codigo)] = g.nome;
+    }
   }));
 }
 
