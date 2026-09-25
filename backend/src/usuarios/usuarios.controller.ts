@@ -44,7 +44,7 @@ export const PADRAO_POR_PERFIL: Record<string, PermissaoIn[]> = {
 };
 
 const CAMPOS = `id, nome, email, papel, perfil, grupo, admin_sistema, ativo, github_usuario, github_permissao,
-  usuario_servidor, chave_ssh, ultimo_login, criado_em, atualizado_em`;
+  usuario_servidor, chave_ssh, ultimo_login, criado_em, atualizado_em, foto_versao, foto IS NOT NULL AS tem_foto`;
 
 function senhaTemporaria() {
   return randomBytes(12).toString('base64url');

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { api, GRUPOS, horas, PAPEIS, TIPOS_ATIVIDADE } from '../api';
+import { pedirTexto } from '../dialogo';
+import Avatar from '../components/Avatar.vue';
 
 interface Atividade {
   id: string; data: string; hora_inicio: string; hora_fim: string; minutos: number; tipo: string; modalidade: string;
@@ -60,8 +62,12 @@ async function decidir(c: Cartao, acao: 'validar' | 'devolver') {
   if (!ids.length) return;
   let motivo: string | null = null;
   if (acao === 'devolver') {
-    motivo = prompt(`Motivo da devolução para ${c.pessoa.nome} (ela verá esta mensagem):`);
-    if (!motivo?.trim()) return;
+    motivo = await pedirTexto({
+      titulo: `Devolver para ${c.pessoa.nome.split(' ')[0]}`,
+      texto: `${ids.length} atividade(s) voltam para correção. A pessoa verá esta mensagem.`,
+      rotulo: 'Motivo da devolução', placeholder: 'ex.: descreva qual ação da meta esta atividade atende', confirmar: 'Devolver', perigo: true,
+    });
+    if (!motivo) return;
   }
   erro.value = aviso.value = '';
   try {
@@ -90,7 +96,8 @@ const semanaTexto = (s: string) => {
 
   <section v-for="c in cartoes" :key="chave(c)" class="cartao pessoa">
     <div class="cabeca">
-      <div>
+      <Avatar :id="c.pessoa.id" :nome="c.pessoa.nome" :tem-foto="(c.pessoa as any).tem_foto" :versao="(c.pessoa as any).foto_versao" :tamanho="42" />
+      <div class="quem">
         <h2>{{ c.pessoa.nome }}</h2>
         <div class="miudo">{{ PAPEIS[c.pessoa.papel] }}<template v-if="c.pessoa.grupo"> · {{ GRUPOS[c.pessoa.grupo] }}</template> · semana de {{ semanaTexto(c.semana) }}</div>
       </div>
@@ -144,7 +151,8 @@ const semanaTexto = (s: string) => {
 <style scoped>
 .vazio { text-align: center; color: var(--texto-2); }
 .pessoa { margin-bottom: 1rem; display: flex; flex-direction: column; gap: .75rem; }
-.cabeca { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.cabeca { display: flex; gap: .8rem; align-items: center; }
+.cabeca .quem { flex: 1; min-width: 0; }
 .cabeca h2 { margin: 0; }
 .total { font-size: 1.5rem; font-weight: 800; color: var(--azul); white-space: nowrap; }
 .total.ok { color: var(--verde); }

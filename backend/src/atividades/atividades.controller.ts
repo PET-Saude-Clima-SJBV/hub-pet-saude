@@ -235,7 +235,7 @@ export class AtividadesController {
          ${escopo === 'grupo' ? 'AND a.grupo = $2' : ''}
        ORDER BY a.data, a.hora_inicio`,
       escopo === 'grupo' ? [u.id, u.grupo ?? -1] : [u.id]);
-    const pessoas = await this.db.query('SELECT id, nome, papel, grupo FROM hub.usuarios WHERE id = ANY($1::uuid[])',
+    const pessoas = await this.db.query('SELECT id, nome, papel, grupo, foto_versao, foto IS NOT NULL AS tem_foto FROM hub.usuarios WHERE id = ANY($1::uuid[])',
       [[...new Set(linhas.map((l) => l.usuario_id))]]);
 
     // agrupa por pessoa + semana: o validador confere a semana inteira de uma vez
@@ -285,15 +285,15 @@ export class AtividadesController {
   @Get('resumo/pessoas')
   async pessoasVisiveis(@Usuario() u: UsuarioSessao) {
     const escopo = await this.perms.escopo(u, 'pessoas.ver');
-    if (escopo === 'todos') return this.db.query(`SELECT id, nome, papel, grupo FROM hub.usuarios WHERE ativo ORDER BY nome`);
+    if (escopo === 'todos') return this.db.query(`SELECT id, nome, papel, grupo, foto_versao, foto IS NOT NULL AS tem_foto FROM hub.usuarios WHERE ativo ORDER BY nome`);
     if (escopo === 'grupo')
-      return this.db.query(`SELECT id, nome, papel, grupo FROM hub.usuarios WHERE ativo AND grupo = $1 ORDER BY nome`, [u.grupo ?? -1]);
-    return this.db.query('SELECT id, nome, papel, grupo FROM hub.usuarios WHERE id = $1', [u.id]);
+      return this.db.query(`SELECT id, nome, papel, grupo, foto_versao, foto IS NOT NULL AS tem_foto FROM hub.usuarios WHERE ativo AND grupo = $1 ORDER BY nome`, [u.grupo ?? -1]);
+    return this.db.query('SELECT id, nome, papel, grupo, foto_versao, foto IS NOT NULL AS tem_foto FROM hub.usuarios WHERE id = $1', [u.id]);
   }
 
   @Get('resumo/:id')
   async resumo(@Usuario() u: UsuarioSessao, @Param('id', ParseUUIDPipe) id: string, @Query('mes') mes?: string) {
-    const p = await this.db.um('SELECT id, nome, papel, grupo FROM hub.usuarios WHERE id = $1', [id]);
+    const p = await this.db.um('SELECT id, nome, papel, grupo, foto_versao, foto IS NOT NULL AS tem_foto FROM hub.usuarios WHERE id = $1', [id]);
     if (!p) throw new NotFoundException('Pessoa não encontrada');
     if (!(await this.perms.pode(u, 'pessoas.ver', p.grupo, p.id))) throw new ForbiddenException('Sem acesso a esta pessoa');
     const m = mes && /^\d{4}-\d{2}$/.test(mes) ? mes : new Date().toLocaleDateString('sv-SE').slice(0, 7);

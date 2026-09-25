@@ -5,6 +5,7 @@ import { api, AMBIENTES, GRUPOS, NOME_AMBIENTE, PAPEIS, PERFIS, Permissao, Pesso
 import { sessao } from '../../sessao';
 import { carregarPainel, painel } from '../../painel';
 import AvisoGerenciado from '../../components/AvisoGerenciado.vue';
+import { confirmar } from '../../dialogo';
 
 const rota = useRoute();
 const router = useRouter();
@@ -91,7 +92,11 @@ async function salvar() {
 }
 
 async function redefinirSenha() {
-  if (!confirm(`Gerar uma nova senha temporária para ${form.nome}? A senha atual deixa de funcionar.`)) return;
+  if (!(await confirmar({
+    titulo: 'Gerar nova senha?',
+    texto: `A senha atual de ${form.nome} deixa de funcionar. A nova aparece uma única vez para você entregar à pessoa.`,
+    confirmar: 'Gerar nova senha',
+  }))) return;
   senhaTemporaria.value = (await api<{ senha_temporaria: string }>(`/admin/usuarios/${id.value}/redefinir-senha`, { metodo: 'POST' })).senha_temporaria;
 }
 

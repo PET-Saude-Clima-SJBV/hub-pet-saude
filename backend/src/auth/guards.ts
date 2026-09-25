@@ -21,7 +21,12 @@ export interface UsuarioSessao {
   perfil: 'desenvolvedor' | 'usuario';
   grupo: number | null;
   admin_sistema: boolean;
+  /** "Ver como" (só fora do prod): administrador que está vendo o sistema como esta pessoa */
+  por?: { id: string; nome: string };
 }
+
+/** "Ver como" só existe fora da produção. */
+export const VER_COMO_PERMITIDO = config.ambiente !== 'prod';
 
 /** Exige login. Recarrega a pessoa do banco a cada requisição (desativou = perde acesso na hora). */
 @Injectable()
@@ -32,17 +37,24 @@ export class LogadoGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest<Request & { usuario?: UsuarioSessao }>();
     const token = req.cookies?.[COOKIE_SESSAO];
     if (!token) throw new UnauthorizedException('Faça login');
-    let sub: string;
+    let dados: { sub: string; por?: string };
     try {
-      sub = (await this.jwt.verifyAsync<{ sub: string }>(token)).sub;
+      dados = await this.jwt.verifyAsync<{ sub: string; por?: string }>(token);
     } catch {
       throw new UnauthorizedException('Sessão expirada');
     }
     const u = await this.db.um<UsuarioSessao>(
       `SELECT id, nome, email, papel, perfil, grupo, admin_sistema FROM hub.usuarios u WHERE id = $1 AND ${PODE_ENTRAR_AQUI}`,
-      [sub],
+      [dados.sub],
     );
     if (!u) throw new UnauthorizedException('Sem acesso a este ambiente');
+    if (dados.por) {
+      // sessão de "ver como": o administrador precisa continuar ativo e admin
+      const admin = VER_COMO_PERMITIDO && await this.db.um(
+        'SELECT id, nome FROM hub.usuarios WHERE id = $1 AND ativo AND admin_sistema', [dados.por]);
+      if (!admin) throw new UnauthorizedException('Sessão de "ver como" inválida');
+      u.por = admin;
+    }
     req.usuario = u;
     return true;
   }

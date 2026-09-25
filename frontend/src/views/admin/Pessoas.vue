@@ -2,7 +2,24 @@
 import { computed, onMounted, ref } from 'vue';
 import { api, AMBIENTES, GRUPOS, PAPEIS, Pessoa } from '../../api';
 import { carregarPainel, painel } from '../../painel';
+import { carregarSessao, sessao } from '../../sessao';
+import { confirmar } from '../../dialogo';
+import { useRouter } from 'vue-router';
 import PermissaoSelo from '../../components/PermissaoSelo.vue';
+import Avatar from '../../components/Avatar.vue';
+
+const router = useRouter();
+const verComoDisponivel = computed(() => (sessao.eu as any)?.ver_como_disponivel);
+async function verComo(p: Pessoa) {
+  if (!(await confirmar({
+    titulo: `Ver o sistema como ${p.nome.split(' ')[0]}?`,
+    texto: `Você vai navegar exatamente com os acessos de ${p.nome} (${PAPEIS[p.papel]}). Tudo o que fizer fica registrado na auditoria em seu nome. Use "Voltar" na faixa roxa para retornar.`,
+    confirmar: 'Ver como',
+  }))) return;
+  await api(`/admin/ver-como/${p.id}`, { metodo: 'POST' });
+  await carregarSessao();
+  router.push('/inicio');
+}
 import AvisoGerenciado from '../../components/AvisoGerenciado.vue';
 
 const pessoas = ref<Pessoa[]>([]);
@@ -67,10 +84,16 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
         <tbody>
           <tr v-for="p in visiveis" :key="p.id" :class="{ inativo: !p.ativo }">
             <td>
-              <strong>{{ p.nome }}</strong>
-              <span v-if="p.admin_sistema" class="selo teal">admin</span>
-              <span v-if="!p.ativo" class="selo vermelho">inativo</span>
-              <div class="miudo">{{ p.email }}</div>
+              <div class="pessoa">
+                <Avatar :id="p.id" :nome="p.nome" :tem-foto="(p as any).tem_foto" :versao="(p as any).foto_versao" :tamanho="34" />
+                <div>
+                  <strong>{{ p.nome }}</strong>
+                  <span v-if="p.admin_sistema" class="selo teal">admin</span>
+                  <span v-if="!p.ativo" class="selo vermelho">inativo</span>
+                  <span v-if="p.email.endsWith('@ficticio.pet')" class="selo">fictícia</span>
+                  <div class="miudo">{{ p.email }}</div>
+                </div>
+              </div>
             </td>
             <td>
               {{ PAPEIS[p.papel] }}
@@ -91,7 +114,11 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
                 </span>
               </template>
             </td>
-            <td><RouterLink :to="`/admin/pessoas/${p.id}`">{{ painel.modo === 'central' ? 'Editar' : 'Ver' }}</RouterLink></td>
+            <td class="acoes-linha">
+              <RouterLink :to="`/admin/pessoas/${p.id}`">{{ painel.modo === 'central' ? 'Editar' : 'Ver' }}</RouterLink>
+              <button v-if="verComoDisponivel && p.id !== sessao.eu?.id && p.ativo && perm(p, painel.ambiente)?.hub"
+                class="link" title="Ver o sistema como esta pessoa (só no dev e no hml)" @click="verComo(p)">Ver como</button>
+            </td>
           </tr>
           <tr v-if="!visiveis.length"><td colspan="7" class="vazio">Nenhuma pessoa encontrada.</td></tr>
         </tbody>
@@ -116,4 +143,7 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
 .inativo { opacity: .55; }
 .vazio { text-align: center; color: var(--texto-2); }
 .selo { margin-left: .3rem; }
+.pessoa { display: flex; gap: .6rem; align-items: center; }
+.acoes-linha { white-space: nowrap; }
+.acoes-linha .link { background: none; border: 0; color: #3B2A6B; cursor: pointer; font: inherit; font-size: .88rem; text-decoration: underline; margin-left: .7rem; padding: 0; }
 </style>
