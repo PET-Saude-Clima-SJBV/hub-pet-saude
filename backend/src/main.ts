@@ -17,17 +17,18 @@ import { FuncionalidadeGuard, FuncionalidadesController, FuncionalidadesService 
 import { IntegracoesController, IntegracoesService } from './integracoes/integracoes';
 import { ClimaService } from './integracoes/clima/clima';
 import { AvisosInmetService } from './integracoes/inmet/avisos';
+import { CatalogosController, CatalogosService } from './catalogos/catalogos';
 import { SessaoOpcionalGuard } from './auth/guards';
 
 @Module({
   imports: [DbModule, JwtModule.register({ secret: config.jwtSegredo })],
   controllers: [
     AuthController, UsuariosController, PublicoController, SaudeController, PermissoesController,
-    FuncionalidadesController, MetasController, AtividadesController, IntegracoesController,
+    FuncionalidadesController, MetasController, AtividadesController, IntegracoesController, CatalogosController,
   ],
   providers: [
     LogadoGuard, AdminGuard, SessaoOpcionalGuard, PermissoesService, FuncionalidadesService, FuncionalidadeGuard,
-    IntegracoesService, AvisosInmetService, ClimaService,
+    IntegracoesService, AvisosInmetService, ClimaService, CatalogosService,
   ],
 })
 class AppModule {}

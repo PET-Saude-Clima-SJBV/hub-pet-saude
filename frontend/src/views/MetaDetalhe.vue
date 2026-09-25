@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { api, EIXOS, GRUPOS, STATUS } from '../api';
 import { sessao } from '../sessao';
 import { confirmar } from '../dialogo';
+import { carregarCatalogos, itens } from '../catalogos';
 
 const rota = useRoute();
 const id = computed(() => Number(rota.params.id));
@@ -24,7 +25,7 @@ async function carregar() {
     erro.value = (e as Error).message;
   }
 }
-onMounted(carregar);
+onMounted(() => Promise.all([carregar(), carregarCatalogos()]));
 
 async function executar(fn: () => Promise<unknown>, ok: string) {
   erro.value = aviso.value = '';
@@ -71,8 +72,8 @@ const acaoAberta = ref<number | 'nova' | null>(null);
 const formAcao = reactive<any>({});
 function abrirAcao(a: any | null) {
   Object.assign(formAcao, a
-    ? { ...a, prazo: a.prazo?.slice(0, 10) ?? '' }
-    : { titulo: '', descricao: '', territorio: '', responsavel_id: null, prazo: '', status: 'nao_iniciado' });
+    ? { ...a, prazo: a.prazo?.slice(0, 10) ?? '', territorio_codigo: a.territorio_codigo ?? '' }
+    : { titulo: '', descricao: '', territorio: '', territorio_codigo: '', responsavel_id: null, prazo: '', status: 'nao_iniciado' });
   acaoAberta.value = a ? a.id : 'nova';
 }
 const salvarAcao = () => executar(async () => {
@@ -204,7 +205,13 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
       <form v-if="acaoAberta !== null" class="grade duas ficha" @submit.prevent="salvarAcao">
         <label class="campo inteiro">Título <input v-model="formAcao.titulo" required /></label>
         <label class="campo inteiro">Descrição <textarea v-model="formAcao.descricao" rows="2" class="texto"></textarea></label>
-        <label class="campo">Território / local <input v-model="formAcao.territorio" /></label>
+        <label class="campo">Território
+          <select v-model="formAcao.territorio_codigo">
+            <option value="">Não se aplica</option>
+            <option v-for="tr in itens('territorios')" :key="tr.codigo" :value="tr.codigo">{{ tr.nome }}</option>
+          </select>
+        </label>
+        <label class="campo">Local (opcional) <input v-model="formAcao.territorio" /></label>
         <label class="campo">Responsável
           <select v-model="formAcao.responsavel_id">
             <option :value="null">-</option>
@@ -226,7 +233,7 @@ const data = (s: string | null) => s ? new Date(s).toLocaleDateString('pt-BR', {
         <tbody>
           <tr v-for="a in m.acoes" :key="a.id">
             <td><strong>{{ a.titulo }}</strong><div v-if="a.descricao" class="miudo">{{ a.descricao }}</div></td>
-            <td>{{ a.territorio ?? '-' }}</td>
+            <td>{{ [a.territorio_nome, a.territorio].filter(Boolean).join(', ') || '-' }}</td>
             <td>{{ a.responsavel_nome ?? '-' }}</td>
             <td>{{ data(a.prazo) }}</td>
             <td><span class="selo" :class="STATUS[a.status].cor">{{ STATUS[a.status].rotulo }}</span></td>

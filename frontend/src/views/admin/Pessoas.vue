@@ -7,6 +7,7 @@ import { confirmar } from '../../dialogo';
 import { useRouter } from 'vue-router';
 import PermissaoSelo from '../../components/PermissaoSelo.vue';
 import Avatar from '../../components/Avatar.vue';
+import { carregarCatalogos, nomeDe } from '../../catalogos';
 
 const router = useRouter();
 const verComoDisponivel = computed(() => (sessao.eu as any)?.ver_como_disponivel);
@@ -29,7 +30,7 @@ const erro = ref('');
 
 onMounted(async () => {
   try {
-    await carregarPainel();
+    await Promise.all([carregarPainel(), carregarCatalogos()]);
     pessoas.value = await api<Pessoa[]>('/admin/usuarios');
   } catch (e) {
     erro.value = (e as Error).message;
@@ -45,9 +46,12 @@ const visiveis = computed(() => {
   const f = filtro.value.trim().toLowerCase();
   return pessoas.value
     .filter((p) => perfil.value === 'todos' || p.perfil === perfil.value)
-    .filter((p) => !f || `${p.nome} ${p.email} ${p.github_usuario ?? ''}`.toLowerCase().includes(f));
+    .filter((p) => !f || `${p.nome} ${p.email} ${p.github_usuario ?? ''} ${vinculo(p)}`.toLowerCase().includes(f));
 });
 const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente === amb);
+/** "Aluno(a), Engenharia de Software, UNIFAE" */
+const vinculo = (p: any) =>
+  [nomeDe('vinculos', p.vinculo), nomeDe('cursos', p.curso), nomeDe('instituicoes', p.instituicao, true)].filter(Boolean).join(', ');
 </script>
 
 <template>
@@ -97,6 +101,7 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
             </td>
             <td>
               {{ PAPEIS[p.papel] }}
+              <div v-if="vinculo(p)" class="miudo">{{ vinculo(p) }}</div>
               <div class="miudo">{{ p.grupo ? GRUPOS[p.grupo] : '-' }} · {{ p.perfil === 'desenvolvedor' ? 'dev' : 'usuário' }}</div>
             </td>
             <td>

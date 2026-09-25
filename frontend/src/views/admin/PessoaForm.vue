@@ -6,6 +6,7 @@ import { sessao } from '../../sessao';
 import { carregarPainel, painel } from '../../painel';
 import AvisoGerenciado from '../../components/AvisoGerenciado.vue';
 import { confirmar } from '../../dialogo';
+import { carregarCatalogos, itens } from '../../catalogos';
 
 const rota = useRoute();
 const router = useRouter();
@@ -17,6 +18,7 @@ const form = reactive({
   nome: '', email: '', papel: 'aluno', perfil: 'usuario' as 'desenvolvedor' | 'usuario', grupo: null as number | null,
   admin_sistema: false, ativo: true,
   github_usuario: '', github_permissao: 'nenhum', usuario_servidor: '', chave_ssh: '',
+  vinculo: '', instituicao: '', curso: '',
   permissoes: AMBIENTES.map((ambiente) => ({ ambiente, hub: false, banco: 'nenhum', servidor: false })) as Permissao[],
 });
 const erro = ref('');
@@ -38,6 +40,10 @@ function aplicarPadrao() {
   }
 }
 
+// curso só da instituição escolhida
+const cursos = computed(() => itens('cursos', form.instituicao || null));
+watch(() => form.instituicao, () => { if (form.curso && !cursos.value.some((c) => c.codigo === form.curso)) form.curso = ''; });
+
 // ao trocar o perfil de uma pessoa NOVA, já preenche os acessos padrão
 watch(() => form.perfil, () => { if (novo.value) aplicarPadrao(); });
 
@@ -53,12 +59,13 @@ function aplicarAtalho(a: (typeof ATALHOS)[number]) {
 
 onMounted(async () => {
   try {
-    await carregarPainel();
+    await Promise.all([carregarPainel(), carregarCatalogos()]);
     if (novo.value) return aplicarPadrao();
     const p = await api<Pessoa>(`/admin/usuarios/${id.value}`);
     Object.assign(form, {
       ...p,
       github_usuario: p.github_usuario ?? '', usuario_servidor: p.usuario_servidor ?? '', chave_ssh: p.chave_ssh ?? '',
+      vinculo: (p as any).vinculo ?? '', instituicao: (p as any).instituicao ?? '', curso: (p as any).curso ?? '',
       permissoes: AMBIENTES.map((a) => p.permissoes.find((x) => x.ambiente === a) ?? { ambiente: a, hub: false, banco: 'nenhum', servidor: false }),
     });
   } catch (e) {
@@ -157,6 +164,30 @@ async function alternarAtivo() {
         </label>
       </section>
 
+      <section class="cartao grade tres-col">
+        <h2 class="inteiro">Vínculo institucional</h2>
+        <p class="dica inteiro">Ex.: aluna de Engenharia de Software da UNIFAE; professor de Publicidade e Propaganda da UNIFAE; profissional de saúde da Prefeitura.</p>
+        <label class="campo">Vínculo
+          <select v-model="form.vinculo">
+            <option value="">Não informado</option>
+            <option v-for="v in itens('vinculos')" :key="v.codigo" :value="v.codigo">{{ v.nome }}</option>
+          </select>
+        </label>
+        <label class="campo">Instituição
+          <select v-model="form.instituicao">
+            <option value="">Não informada</option>
+            <option v-for="i in itens('instituicoes')" :key="i.codigo" :value="i.codigo">{{ i.sigla ? i.sigla + ' - ' + i.nome : i.nome }}</option>
+          </select>
+        </label>
+        <label class="campo">Curso ou formação
+          <select v-model="form.curso">
+            <option value="">Não informado</option>
+            <option v-for="c in cursos" :key="c.codigo" :value="c.codigo">{{ c.nome }}</option>
+          </select>
+        </label>
+        <p class="dica inteiro">Falta alguma opção? Cadastre em <RouterLink to="/admin/cadastros">Administração, Cadastros</RouterLink>.</p>
+      </section>
+
       <section class="cartao">
         <h2>Acessos por ambiente</h2>
         <div v-if="dev" class="perfis">
@@ -235,6 +266,8 @@ async function alternarAtivo() {
 h1 { margin-top: .5rem; }
 fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .inteiro { grid-column: 1 / -1; }
+.tres-col { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.dica { font-size: .84rem; color: var(--texto-2); margin: -.4rem 0 0; }
 .check { display: flex; gap: .6rem; align-items: flex-start; font-size: .9rem; cursor: pointer; }
 .check input { width: auto; margin-top: .2rem; }
 .check small { color: var(--texto-2); }

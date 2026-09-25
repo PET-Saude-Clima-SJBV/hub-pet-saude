@@ -49,11 +49,6 @@ export const STATUS: Record<string, { rotulo: string; cor: string }> = {
   concluido: { rotulo: 'Concluído', cor: 'verde' },
 };
 
-export const TIPOS_ATIVIDADE: Record<string, string> = {
-  acao_tecnica: 'Ação técnica', reuniao: 'Reunião', orientacao: 'Orientação', estudo: 'Estudo',
-  producao: 'Produção', evento: 'Evento', gestao: 'Gestão',
-};
-
 export const VALIDACAO: Record<string, { rotulo: string; cor: string }> = {
   pendente: { rotulo: 'Aguardando validação', cor: 'azul' },
   validada: { rotulo: 'Validada', cor: 'verde' },

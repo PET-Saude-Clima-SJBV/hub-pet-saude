@@ -32,6 +32,7 @@ const menu = computed<Grupo[]>(() => {
     chave: 'admin', rotulo: 'Administração', itens: [
       { para: '/admin/pessoas', rotulo: 'Pessoas e acessos' },
       { para: '/admin/permissoes', rotulo: 'Permissões por papel' },
+      { para: '/admin/cadastros', rotulo: 'Cadastros' },
       { para: '/admin/funcionalidades', rotulo: 'Funcionalidades' },
       { para: '/admin/integracoes', rotulo: 'Integrações' },
       { para: '/admin/sincronizacao', rotulo: 'Sincronização' },

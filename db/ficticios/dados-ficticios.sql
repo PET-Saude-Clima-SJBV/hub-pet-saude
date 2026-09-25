@@ -138,6 +138,32 @@ BEGIN
     END LOOP;
   END LOOP;
 
+  -- vínculo institucional (códigos dos cadastros), espelhando a composição real dos grupos
+  UPDATE hub.usuarios SET vinculo = 'professor', instituicao = 'unifae', curso = 'unifae-medicina'
+   WHERE email LIKE '%@ficticio.pet' AND papel = 'coordenacao_geral';
+  UPDATE hub.usuarios SET vinculo = 'professor', instituicao = 'unifae',
+         curso = (ARRAY['unifae-enfermagem', 'unifae-odontologia', 'unifae-fisioterapia', 'unifae-psicologia', 'unifae-farmacia'])[grupo]
+   WHERE email LIKE '%@ficticio.pet' AND papel IN ('coordenador', 'tutor');
+  UPDATE hub.usuarios SET vinculo = CASE WHEN nome LIKE 'O%' OR nome LIKE 'E%' OR nome LIKE 'Marcos%' THEN 'acs' ELSE 'profissional' END,
+         instituicao = 'prefeitura', curso = NULL
+   WHERE email LIKE '%@ficticio.pet' AND papel = 'preceptor';
+  UPDATE hub.usuarios u SET vinculo = 'aluno', instituicao = x.inst, curso = x.curso
+    FROM (SELECT id, (ARRAY['unifae', 'unifae', 'unifae', 'ifsp', 'unesp'])[1 + (row_number() OVER (ORDER BY nome))::int % 5] AS inst,
+                 row_number() OVER (ORDER BY nome) AS n
+          FROM hub.usuarios WHERE email LIKE '%@ficticio.pet' AND papel = 'aluno' AND perfil = 'usuario') a
+    CROSS JOIN LATERAL (SELECT a.inst,
+      CASE a.inst WHEN 'unifae' THEN (ARRAY['unifae-medicina', 'unifae-enfermagem', 'unifae-psicologia', 'unifae-farmacia'])[1 + a.n::int % 4]
+                  WHEN 'ifsp' THEN 'ifsp-ciencias-naturais' ELSE 'unesp-eletronica-telecom' END AS curso) x
+   WHERE u.id = a.id;
+  -- PET II: alunos desenvolvedores de cursos de exatas
+  UPDATE hub.usuarios u SET vinculo = 'aluno', instituicao = x.inst, curso = x.curso
+    FROM (SELECT id, row_number() OVER (ORDER BY nome) AS n FROM hub.usuarios
+          WHERE email LIKE '%@ficticio.pet' AND perfil = 'desenvolvedor') a
+    CROSS JOIN LATERAL (SELECT (ARRAY['unifae', 'ifsp', 'unesp', 'ifsp', 'unifae', 'unesp', 'unifae'])[a.n] AS inst,
+      (ARRAY['unifae-eng-software', 'ifsp-computacao', 'unesp-aeronautica', 'ifsp-computacao', 'unifae-eng-software',
+             'unesp-eletronica-telecom', 'unifae-eng-software'])[a.n] AS curso) x
+   WHERE u.id = a.id;
+
   RAISE NOTICE 'Carga fictícia: % pessoas, % ações, % atividades',
     (SELECT count(*) FROM hub.usuarios WHERE email LIKE '%@ficticio.pet'),
     (SELECT count(*) FROM hub.acoes WHERE titulo LIKE '[fictícia] %'),

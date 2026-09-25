@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { api, GRUPOS, horas, PAPEIS, TIPOS_ATIVIDADE, VALIDACAO } from '../api';
+import { api, GRUPOS, horas, PAPEIS, VALIDACAO } from '../api';
+import { carregarCatalogos, nomeDe } from '../catalogos';
 import { sessao } from '../sessao';
 
 interface Pessoa { id: string; nome: string; papel: string; grupo: number | null }
@@ -20,6 +21,7 @@ const r = ref<Resumo | null>(null);
 const erro = ref('');
 
 onMounted(async () => {
+  carregarCatalogos();
   try {
     pessoas.value = await api<Pessoa[]>('/resumo/pessoas');
     pessoaId.value = pessoas.value.find((p) => p.id === sessao.eu?.id)?.id ?? pessoas.value[0]?.id ?? '';
@@ -104,7 +106,7 @@ const nomeMes = computed(() => new Date(mes.value + '-15').toLocaleDateString('p
 
         <h2 class="espaco">Por tipo</h2>
         <div v-for="t in r.tipos" :key="t.tipo" class="barra-linha">
-          <span class="rotulo">{{ TIPOS_ATIVIDADE[t.tipo] }}</span>
+          <span class="rotulo">{{ nomeDe('tipos_atividade', t.tipo) }}</span>
           <div class="barra tipo"><div :style="{ width: t.minutos / maxTipo * 100 + '%' }"></div></div>
           <span class="valor">{{ horas(t.minutos) }}</span>
         </div>
@@ -117,7 +119,7 @@ const nomeMes = computed(() => new Date(mes.value + '-15').toLocaleDateString('p
         <tbody>
           <tr v-for="p in r.pendencias" :key="p.id">
             <td class="quando">{{ new Date(p.data + 'T12:00:00').toLocaleDateString('pt-BR') }}</td>
-            <td>{{ TIPOS_ATIVIDADE[p.tipo] }}</td>
+            <td>{{ nomeDe('tipos_atividade', p.tipo) }}</td>
             <td>{{ p.descricao }}<div v-if="p.motivo_devolucao" class="erro-mini">{{ p.motivo_devolucao }}</div></td>
             <td>{{ horas(p.minutos) }}</td>
             <td><span class="selo" :class="VALIDACAO[p.validacao].cor">{{ VALIDACAO[p.validacao].rotulo }}</span></td>

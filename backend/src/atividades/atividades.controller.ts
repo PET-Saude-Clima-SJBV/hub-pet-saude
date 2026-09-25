@@ -10,21 +10,17 @@ import { LogadoGuard, Usuario, UsuarioSessao } from '../auth/guards';
 import { PermissoesService } from '../permissoes/permissoes';
 import { Funcionalidade, FuncionalidadeGuard } from '../funcionalidades/funcionalidades';
 import { registrarAuditoria } from '../usuarios/auditoria';
+import { CatalogosService } from '../catalogos/catalogos';
 import {
   MAX_ARQUIVOS, PASTA_EVIDENCIAS, apagarArquivos, lerLinks, opcoesUpload, sha256,
 } from './armazenamento';
 
-export const TIPOS: Record<string, string> = {
-  acao_tecnica: 'Ação técnica', reuniao: 'Reunião', orientacao: 'Orientação', estudo: 'Estudo',
-  producao: 'Produção', evento: 'Evento', gestao: 'Gestão',
-};
-const MODALIDADES = ['presencial', 'remoto'];
 const STATUS = ['nao_iniciado', 'em_andamento', 'em_atraso', 'concluido'];
 const META_SEMANAL_MIN = 8 * 60;
 
 interface AtividadeIn {
   data?: string; hora_inicio?: string; hora_fim?: string; tipo?: string; modalidade?: string;
-  territorio?: string; acao_id?: string | number | null; descricao?: string; status?: string; links?: unknown;
+  territorio?: string; territorio_codigo?: string | null; acao_id?: string | number | null; descricao?: string; status?: string; links?: unknown;
 }
 
 function validar(d: AtividadeIn) {
@@ -33,8 +29,6 @@ function validar(d: AtividadeIn) {
   if (d.data! > new Date().toLocaleDateString('sv-SE')) erro('A data não pode estar no futuro');
   if (!/^\d{2}:\d{2}$/.test(d.hora_inicio ?? '') || !/^\d{2}:\d{2}$/.test(d.hora_fim ?? '')) erro('Horário inválido');
   if (d.hora_fim! <= d.hora_inicio!) erro('O horário final precisa ser depois do inicial');
-  if (!TIPOS[d.tipo ?? '']) erro('Tipo de atividade inválido');
-  if (!MODALIDADES.includes(d.modalidade ?? '')) erro('Modalidade inválida');
   if (!d.descricao?.trim()) erro('Descreva a atividade');
   if (d.descricao!.length > 4000) erro('Descrição muito longa');
   if (d.status && !STATUS.includes(d.status)) erro('Status inválido');
@@ -50,20 +44,28 @@ function inicioDaSemana(data: string) {
 const SELECT_ATIVIDADE = `
   SELECT a.*, to_char(a.data, 'YYYY-MM-DD') AS data, to_char(a.hora_inicio, 'HH24:MI') AS hora_inicio,
          to_char(a.hora_fim, 'HH24:MI') AS hora_fim,
-         ac.titulo AS acao_titulo, m.codigo AS meta_codigo, v.nome AS validador_nome,
+         ac.titulo AS acao_titulo, m.codigo AS meta_codigo, v.nome AS validador_nome, t.nome AS territorio_nome,
          COALESCE((SELECT json_agg(json_build_object('id', e.id, 'tipo', e.tipo, 'nome', e.nome, 'url', e.url,
                    'mime', e.mime, 'tamanho', e.tamanho) ORDER BY e.enviado_em)
                    FROM hub.evidencias e WHERE e.atividade_id = a.id), '[]') AS evidencias
   FROM hub.atividades a
   LEFT JOIN hub.acoes ac ON ac.id = a.acao_id
   LEFT JOIN hub.metas m ON m.id = ac.meta_id
-  LEFT JOIN hub.usuarios v ON v.id = a.validador_id`;
+  LEFT JOIN hub.usuarios v ON v.id = a.validador_id
+  LEFT JOIN hub.catalogo_itens t ON t.catalogo = 'territorios' AND t.codigo = a.territorio_codigo`;
 
 @Controller()
 @UseGuards(LogadoGuard, FuncionalidadeGuard)
 @Funcionalidade('atividades')
 export class AtividadesController {
-  constructor(private db: DbService, private perms: PermissoesService) {}
+  constructor(private db: DbService, private perms: PermissoesService, private cat: CatalogosService) {}
+
+  /** Tipo, modalidade e território precisam existir (e estar ativos) nos cadastros. */
+  private async validarCadastros(d: AtividadeIn) {
+    await this.cat.exigir('tipos_atividade', d.tipo, 'o tipo de atividade');
+    await this.cat.exigir('modalidades', d.modalidade, 'a modalidade');
+    d.territorio_codigo = await this.cat.exigir('territorios', d.territorio_codigo, 'o território', true);
+  }
 
   private async exigirRegistro(u: UsuarioSessao) {
     if ((await this.perms.escopo(u, 'atividades.registrar')) === 'nenhum')
@@ -125,7 +127,7 @@ export class AtividadesController {
       `SELECT a.id, a.titulo, m.codigo AS meta_codigo, m.grupo FROM hub.acoes a JOIN hub.metas m ON m.id = a.meta_id
        ${escopo === 'grupo' ? 'WHERE m.grupo = $1' : ''} ORDER BY m.ordem, a.titulo`,
       escopo === 'grupo' ? [u.grupo ?? -1] : []);
-    return { tipos: TIPOS, acoes };
+    return { acoes }; // tipos, modalidades e territórios vêm de /catalogos
   }
 
   @Post('atividades')
@@ -134,6 +136,7 @@ export class AtividadesController {
     try {
       await this.exigirRegistro(u);
       validar(d);
+      await this.validarCadastros(d);
       const links = lerLinks(d.links);
       if (!arquivos.length && !links.length)
         throw new BadRequestException('Evidência é obrigatória: anexe um arquivo ou informe um link');
@@ -141,10 +144,10 @@ export class AtividadesController {
       const id = await this.db.transacao(async (c) => {
         const { rows } = await c.query(
           `INSERT INTO hub.atividades (usuario_id, grupo, data, hora_inicio, hora_fim, tipo, modalidade, territorio,
-             acao_id, descricao, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+             acao_id, descricao, status, territorio_codigo)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
           [u.id, u.grupo, d.data, d.hora_inicio, d.hora_fim, d.tipo, d.modalidade, d.territorio?.trim() || null,
-            acaoId, d.descricao!.trim(), d.status || 'concluido']);
+            acaoId, d.descricao!.trim(), d.status || 'concluido', d.territorio_codigo || null]);
         await this.gravarEvidencias(c, rows[0].id, arquivos, links);
         return rows[0].id as string;
       });
@@ -159,15 +162,16 @@ export class AtividadesController {
   async editar(@Usuario() u: UsuarioSessao, @Param('id', ParseUUIDPipe) id: string, @Body() d: AtividadeIn) {
     const a = await this.minhaEditavel(u, id);
     validar(d);
+    await this.validarCadastros(d);
     const acaoId = await this.acaoValida(u, d.acao_id);
     await this.db.query(
       `UPDATE hub.atividades SET data = $2, hora_inicio = $3, hora_fim = $4, tipo = $5, modalidade = $6, territorio = $7,
-         acao_id = $8, descricao = $9, status = $10, atualizado_em = now(),
+         acao_id = $8, descricao = $9, status = $10, territorio_codigo = $11, atualizado_em = now(),
          -- corrigida depois de devolvida: volta para a fila de validação
          validacao = CASE WHEN validacao = 'devolvida' THEN 'pendente' ELSE validacao END
        WHERE id = $1`,
       [id, d.data, d.hora_inicio, d.hora_fim, d.tipo, d.modalidade, d.territorio?.trim() || null, acaoId,
-        d.descricao!.trim(), d.status || a.status]);
+        d.descricao!.trim(), d.status || a.status, d.territorio_codigo || null]);
     return this.db.um(`${SELECT_ATIVIDADE} WHERE a.id = $1`, [id]);
   }
 
