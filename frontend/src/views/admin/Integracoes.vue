@@ -27,12 +27,12 @@ function situacao(i: Integracao) {
   const falhouPorUltimo = i.ultima_falha_em && (!i.ultima_resposta_em || i.ultima_falha_em > i.ultima_resposta_em);
   return falhouPorUltimo ? { rotulo: 'com falha', cor: 'vermelho' } : { rotulo: 'funcionando', cor: 'verde' };
 }
-const quando = (s: string | null) => s ? new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'medium' }) : '—';
+const quando = (s: string | null) => s ? new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'medium' }) : '-';
 </script>
 
 <template>
   <h1>Integrações</h1>
-  <p class="sub">Serviços com que o HUB conversa — órgãos externos e serviços nossos no servidor — e como estão respondendo.</p>
+  <p class="sub">Serviços com que o HUB se comunica (órgãos externos e serviços nossos no servidor) e como estão respondendo.</p>
   <p v-if="erro" class="erro">{{ erro }}</p>
 
   <section class="cartao rolagem">
@@ -47,7 +47,7 @@ const quando = (s: string | null) => s ? new Date(s).toLocaleString('pt-BR', { d
             <div v-if="i.ultimo_erro" class="miudo">último erro: {{ i.ultimo_erro }} ({{ quando(i.ultima_falha_em) }})</div>
           </td>
           <td>{{ quando(i.ultima_resposta_em) }}</td>
-          <td>{{ i.latencia_ms != null ? i.latencia_ms + ' ms' : '—' }}</td>
+          <td>{{ i.latencia_ms != null ? i.latencia_ms + ' ms' : '-' }}</td>
           <td>{{ i.chamadas }} / {{ i.falhas }}</td>
         </tr>
         <tr v-if="!lista.length"><td colspan="6" class="miudo">Nenhuma integração registrada.</td></tr>

@@ -1,7 +1,7 @@
 # HUB PET-Saúde
 
 Plataforma única do projeto **PET-Saúde: Clima** (UNIFAE + Secretaria Municipal de Saúde de São João da Boa Vista).
-Mantida pelo Grupo PET II — Cuidado Digital na APS.
+Mantida pelo Grupo PET II (Cuidado Digital na APS).
 
 Stack: Node.js (NestJS) + TypeScript · Vue 3 · PostgreSQL 17 + PostGIS 3.5 · Metabase · Docker.
 
@@ -11,7 +11,7 @@ Stack: Node.js (NestJS) + TypeScript · Vue 3 · PostgreSQL 17 + PostGIS 3.5 · 
 
 | Ambiente | Branch | Para quê | Quem aprova a entrada |
 |---|---|---|---|
-| **local** | a sua (`feature/...`) | Você programa e testa na sua máquina | — |
+| **local** | a sua (`feature/...`) | Você programa e testa na sua máquina | - |
 | **dev** | `dev` | Integração: o código de todos junto, no servidor | Tutor |
 | **hml** | `hml` | Homologação: a coordenação valida | Tutor |
 | **prod** | `main` | Produção: o que a população e a Secretaria usam | Tutor (após validação da coordenação) |

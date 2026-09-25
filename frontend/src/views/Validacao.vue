@@ -112,7 +112,7 @@ const semanaTexto = (s: string) => {
           <input type="checkbox" :checked="d.lista.filter((a) => a.evidencias.length).every((a) => marcadas.has(a.id))" @change="alternarDia(d.lista)" />
           <strong>{{ d.rotulo }}</strong> <span>{{ horas(d.minutos) }}</span>
         </label>
-        <div v-else class="dia-topo"><strong>{{ d.rotulo }}</strong><span>—</span></div>
+        <div v-else class="dia-topo"><strong>{{ d.rotulo }}</strong><span>-</span></div>
       </div>
     </div>
 
@@ -123,7 +123,7 @@ const semanaTexto = (s: string) => {
       <tbody>
         <tr v-for="a in c.atividades" :key="a.id">
           <td><input type="checkbox" :checked="marcadas.has(a.id)" :disabled="!a.evidencias.length" @change="alternar(a.id)" /></td>
-          <td class="quando">{{ new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }) }}<br />{{ a.hora_inicio }}–{{ a.hora_fim }}</td>
+          <td class="quando">{{ new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }) }}<br />{{ a.hora_inicio }}-{{ a.hora_fim }}</td>
           <td>
             <strong>{{ TIPOS_ATIVIDADE[a.tipo] }}</strong> · {{ a.modalidade }}<template v-if="a.territorio"> · {{ a.territorio }}</template>
             <span v-if="a.meta_codigo" class="selo teal">{{ a.meta_codigo }}</span>

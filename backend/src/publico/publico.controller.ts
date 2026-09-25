@@ -7,7 +7,7 @@ import { ClimaService } from '../integracoes/clima/clima';
 
 const CHAVES_PUBLICAS = ['pagina_publica', 'clima_publico', 'mapa_publico'];
 
-/** Rotas abertas, sem login. Só dado agregado — nunca dado pessoal. */
+/** Rotas abertas, sem login. Só dado agregado, nunca dado pessoal. */
 @Controller('publico')
 @UseGuards(SessaoOpcionalGuard, FuncionalidadeGuard)
 @Funcionalidade('pagina_publica')

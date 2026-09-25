@@ -6,11 +6,11 @@
 
 - [ ] → `dev` (integração)
 - [ ] → `hml` (validação da coordenação)
-- [ ] → `main` (produção) — já validado em HML por: _______
+- [ ] → `main` (produção). Validado em HML por: _______
 
 ## Meta / funcionalidade relacionada
 
-<!-- Ex.: M4.05 — Mapa de calor por território / Meta IND-12 -->
+<!-- Ex.: M4.05 (mapa de calor por território) ou IND-12 -->
 
 ## Como testar
 

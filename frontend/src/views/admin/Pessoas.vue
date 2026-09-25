@@ -97,7 +97,7 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
             </td>
             <td>
               {{ PAPEIS[p.papel] }}
-              <div class="miudo">{{ p.grupo ? GRUPOS[p.grupo] : '—' }} · {{ p.perfil === 'desenvolvedor' ? 'dev' : 'usuário' }}</div>
+              <div class="miudo">{{ p.grupo ? GRUPOS[p.grupo] : '-' }} · {{ p.perfil === 'desenvolvedor' ? 'dev' : 'usuário' }}</div>
             </td>
             <td>
               <PermissaoSelo :nivel="p.github_permissao" />
@@ -105,7 +105,7 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
             </td>
             <td v-for="a in AMBIENTES" :key="a" class="amb">
               <span class="hub" :class="{ sim: perm(p, a)?.hub }" :title="perm(p, a)?.hub ? 'Entra no HUB' : 'Não entra no HUB'">
-                {{ perm(p, a)?.hub ? 'HUB' : '—' }}
+                {{ perm(p, a)?.hub ? 'HUB' : '-' }}
               </span>
               <template v-if="p.perfil === 'desenvolvedor'">
                 <PermissaoSelo :nivel="perm(p, a)?.banco ?? 'nenhum'" />

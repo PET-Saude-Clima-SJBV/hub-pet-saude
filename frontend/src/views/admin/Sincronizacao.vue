@@ -51,7 +51,7 @@ const linhas = computed(() => (dados.value?.plano ?? [])
 
 const ROTULO: Record<Situacao, string> = { aplicado: 'aplicado', pendente: 'pendente', erro: 'erro', alerta: 'alerta' };
 const COR: Record<Situacao, string> = { aplicado: 'verde', pendente: 'azul', erro: 'vermelho', alerta: 'ambar' };
-const quando = (s?: string | null) => s ? new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+const quando = (s?: string | null) => s ? new Date(s).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-';
 </script>
 
 <template>

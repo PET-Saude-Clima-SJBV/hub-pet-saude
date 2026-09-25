@@ -252,7 +252,7 @@ function resumo(u: any) {
     usuario_servidor: u.usuario_servidor, tem_chave_ssh: !!u.chave_ssh,
     permissoes: Object.fromEntries(
       (u.permissoes ?? []).map((p: any) => [
-        p.ambiente, [p.hub && 'hub', p.banco !== 'nenhum' && `banco:${p.banco}`, p.servidor && 'servidor'].filter(Boolean).join(' ') || '—',
+        p.ambiente, [p.hub && 'hub', p.banco !== 'nenhum' && `banco:${p.banco}`, p.servidor && 'servidor'].filter(Boolean).join(' ') || '-',
       ]),
     ),
   };
