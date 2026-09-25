@@ -14,14 +14,20 @@ import { PermissoesController, PermissoesService } from './permissoes/permissoes
 import { MetasController } from './metas/metas.controller';
 import { AtividadesController } from './atividades/atividades.controller';
 import { FuncionalidadeGuard, FuncionalidadesController, FuncionalidadesService } from './funcionalidades/funcionalidades';
+import { IntegracoesController, IntegracoesService } from './integracoes/integracoes';
+import { ClimaService } from './integracoes/clima/clima';
+import { SessaoOpcionalGuard } from './auth/guards';
 
 @Module({
   imports: [DbModule, JwtModule.register({ secret: config.jwtSegredo })],
   controllers: [
     AuthController, UsuariosController, PublicoController, SaudeController, PermissoesController,
-    FuncionalidadesController, MetasController, AtividadesController,
+    FuncionalidadesController, MetasController, AtividadesController, IntegracoesController,
   ],
-  providers: [LogadoGuard, AdminGuard, PermissoesService, FuncionalidadesService, FuncionalidadeGuard],
+  providers: [
+    LogadoGuard, AdminGuard, SessaoOpcionalGuard, PermissoesService, FuncionalidadesService, FuncionalidadeGuard,
+    IntegracoesService, ClimaService,
+  ],
 })
 class AppModule {}
 
