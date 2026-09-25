@@ -4,8 +4,13 @@ import { api, ErroApi } from '../api';
 import { sessao } from '../sessao';
 import CardClima from '../components/publico/CardClima.vue';
 import MapaCalor from '../components/publico/MapaCalor.vue';
+import MapaProblemas from '../components/publico/MapaProblemas.vue';
+import CardIndicador from '../components/publico/CardIndicador.vue';
 
-interface Indicador { titulo: string; valor: number; unidade: string | null; descricao: string; ficticio: boolean }
+interface Indicador {
+  titulo: string; valor: number; unidade: string | null; descricao: string;
+  detalhe: string | null; fonte: string | null; ficticio: boolean;
+}
 const indicadores = ref<Indicador[]>([]);
 const estado = ref<'carregando' | 'ok' | 'manutencao' | 'erro'>('carregando');
 const func = ref<Record<string, boolean>>({});
@@ -64,22 +69,35 @@ const PARCEIROS = [
 
     <main v-else>
       <p v-if="estado === 'erro'" class="erro">Não foi possível carregar os dados agora. Tente novamente em alguns minutos.</p>
+      <!-- 1. clima e avisos oficiais -->
       <CardClima v-if="func.clima_publico" class="bloco" />
-      <section class="cartoes">
-        <article v-for="i in indicadores" :key="i.titulo" class="cartao kpi">
-          <div class="valor">{{ i.valor.toLocaleString('pt-BR') }}<small v-if="i.unidade"> {{ i.unidade }}</small></div>
-          <div class="titulo">{{ i.titulo }}</div>
-          <p>{{ i.descricao }}</p>
-          <span v-if="i.ficticio" class="selo ambar">dado ilustrativo</span>
-        </article>
-      </section>
-      <section v-if="func.mapa_publico && estado === 'ok'" class="cartao bloco mapa">
+
+      <!-- 2. mapa de calor geral -->
+      <section v-if="func.mapa_publico && estado === 'ok'" class="cartao bloco">
         <div class="titulo-mapa">
           <h2>Mapa de calor do município</h2>
           <span class="selo ambar">dados ilustrativos</span>
         </div>
         <p class="nota-mapa">Distribuição ilustrativa por região da cidade. Os dados reais serão publicados quando os territórios do projeto forem definidos.</p>
         <MapaCalor />
+      </section>
+
+      <!-- 3. mapa por problema ou doença -->
+      <section v-if="func.mapa_problemas && estado === 'ok'" class="cartao bloco">
+        <div class="titulo-mapa">
+          <h2>Problemas e doenças no mapa</h2>
+          <span class="selo ambar">dados fictícios</span>
+        </div>
+        <p class="nota-mapa">Escolha um problema climático ou uma doença para ver onde ele aparece na cidade.</p>
+        <MapaProblemas />
+      </section>
+
+      <!-- 4. números do projeto -->
+      <section v-if="indicadores.length" class="bloco">
+        <h2 class="titulo-secao">O projeto em números</h2>
+        <div class="cartoes">
+          <CardIndicador v-for="i in indicadores" :key="i.titulo" v-bind="i" />
+        </div>
       </section>
       <p v-if="estado === 'ok'" class="nota">Esta página mostra apenas dados agregados. Nenhuma informação pessoal é publicada.</p>
     </main>
@@ -112,12 +130,10 @@ header { background: linear-gradient(160deg, var(--teal-900), var(--teal-700)); 
 .chamada p { max-width: 660px; opacity: .9; line-height: 1.5; margin: 0; }
 main { padding: 0 1rem; margin-top: -1.75rem; flex: 1; }
 .cartoes { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.kpi .valor { font-size: 2.2rem; font-weight: 800; color: var(--teal-900); }
-.kpi .titulo { font-weight: 700; margin-top: .2rem; }
-.kpi p { color: var(--texto-2); font-size: .88rem; margin: .4rem 0 .6rem; }
 .nota { color: var(--texto-2); font-size: .85rem; margin: 1.5rem 0; }
 .bloco { margin-bottom: 1rem; }
-.cartoes + .bloco { margin-top: 1rem; }
+.titulo-secao { margin: 1.5rem 0 .75rem; }
+.cartoes { align-items: start; }
 .titulo-mapa { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .titulo-mapa h2 { margin: 0; }
 .nota-mapa { font-size: .88rem; color: var(--texto-2); margin: .4rem 0 .9rem; }
