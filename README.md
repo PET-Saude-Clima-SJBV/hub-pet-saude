@@ -74,6 +74,19 @@ As tabelas são criadas sozinhas quando a API sobe (arquivos em `backend/migrati
 
 ---
 
+### Dados fictícios (dev, hml e local)
+
+`db/ficticios/dados-ficticios.sql` cria 37 pessoas com a estrutura dos grupos (coordenação geral; em cada PET:
+coordenador, tutor, preceptores e alunos; PET II com alunos desenvolvedores), ações e ~120 atividades em
+situações variadas. E-mails `@ficticio.pet`, senhas aleatórias. Para navegar como cada uma, o administrador usa
+**Pessoas → Ver como** (não existe em produção). Rodar de novo recria tudo; `remover-ficticios.sql` apaga.
+
+```bash
+docker exec -i hub-local-db psql -U hub -d hub_local < db/ficticios/dados-ficticios.sql
+```
+
+---
+
 ## Endereços no servidor
 
 | Ambiente | Endereço |

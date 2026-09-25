@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { api } from '../../api';
 import { carregarSessao } from '../../sessao';
+import { confirmar } from '../../dialogo';
 
 interface Func { chave: string; nome: string; descricao: string; estado: string; atualizado_em: string; atualizado_por: string | null }
 const funcs = ref<Func[]>([]);
@@ -24,7 +25,11 @@ onMounted(carregar);
 
 async function mudar(f: Func, estado: string) {
   if (estado === f.estado) return;
-  if (estado === 'desligada' && !confirm(`Desligar "${f.nome}"? Ninguém mais conseguirá usar até ser religada.`)) return;
+  if (estado === 'desligada' && !(await confirmar({
+    titulo: `Desligar "${f.nome}"?`,
+    texto: 'Ninguém mais conseguirá usar esta funcionalidade neste ambiente até ela ser religada. Os dados já registrados continuam guardados.',
+    confirmar: 'Desligar', perigo: true,
+  }))) return;
   erro.value = '';
   try {
     await api(`/admin/funcionalidades/${f.chave}`, { metodo: 'PUT', corpo: { estado } });

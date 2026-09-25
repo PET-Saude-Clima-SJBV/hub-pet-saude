@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { api, horas, STATUS, TIPOS_ATIVIDADE, VALIDACAO } from '../api';
+import { confirmar } from '../dialogo';
 
 interface Evidencia { id: string; tipo: 'arquivo' | 'link'; nome: string; url: string | null; mime: string | null; tamanho: number | null }
 interface Atividade {
@@ -99,7 +100,7 @@ async function salvar() {
 }
 
 async function apagar(a: Atividade) {
-  if (!confirm('Apagar esta atividade e suas evidências?')) return;
+  if (!(await confirmar({ titulo: 'Apagar esta atividade?', texto: 'A atividade e as evidências anexadas serão apagadas.', confirmar: 'Apagar', perigo: true }))) return;
   await api(`/atividades/${a.id}`, { metodo: 'DELETE' }).catch((e) => (erro.value = e.message));
   await carregar(dados.value?.de);
 }
@@ -116,7 +117,7 @@ async function anexar(a: Atividade, ev: Event) {
 }
 
 async function removerEvidencia(e: Evidencia) {
-  if (!confirm(`Remover a evidência "${e.nome}"?`)) return;
+  if (!(await confirmar({ titulo: 'Remover evidência?', texto: `"${e.nome}" será removida desta atividade.`, confirmar: 'Remover', perigo: true }))) return;
   await api(`/evidencias/${e.id}`, { metodo: 'DELETE' }).catch((x) => (erro.value = x.message));
   await carregar(dados.value?.de);
 }

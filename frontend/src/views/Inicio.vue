@@ -3,6 +3,8 @@ import { computed, ref } from 'vue';
 import { sessao } from '../sessao';
 import { api, AMBIENTES, GRUPOS, NOME_AMBIENTE, PAPEIS } from '../api';
 import PermissaoSelo from '../components/PermissaoSelo.vue';
+import Avatar from '../components/Avatar.vue';
+import { confirmar } from '../dialogo';
 
 const eu = computed(() => sessao.eu as any);
 const perm = (amb: string) => eu.value?.permissoes.find((p: any) => p.ambiente === amb);
@@ -14,6 +16,34 @@ const comTunel = computed(() => AMBIENTES.filter((a) => perm(a)?.servidor));
 const comandoTunel = computed(() =>
   `ssh -N -p 9222 ${comTunel.value.map((a) => `-L ${PORTA[a]}:localhost:${PORTA[a]}`).join(' ')} ${eu.value?.usuario_servidor}@189.44.109.186`);
 const verSenhaBanco = ref(false);
+
+// ---- foto de perfil
+const enviandoFoto = ref(false);
+const erroFoto = ref('');
+const inputFoto = ref<HTMLInputElement | null>(null);
+async function trocarFoto(ev: Event) {
+  const f = (ev.target as HTMLInputElement).files?.[0];
+  if (!f) return;
+  erroFoto.value = '';
+  if (f.size > 2 * 1024 * 1024) { erroFoto.value = 'A imagem precisa ter até 2 MB.'; return; }
+  enviandoFoto.value = true;
+  try {
+    const fd = new FormData();
+    fd.append('foto', f);
+    const r = await api<{ foto_versao: number }>('/auth/foto', { corpo: fd });
+    Object.assign(sessao.eu as any, { tem_foto: true, foto_versao: r.foto_versao });
+  } catch (e) {
+    erroFoto.value = (e as Error).message;
+  } finally {
+    enviandoFoto.value = false;
+    if (inputFoto.value) inputFoto.value.value = '';
+  }
+}
+async function removerFoto() {
+  if (!(await confirmar({ titulo: 'Remover foto?', texto: 'No lugar dela aparecerão as suas iniciais.', confirmar: 'Remover' }))) return;
+  await api('/auth/foto', { metodo: 'DELETE' });
+  Object.assign(sessao.eu as any, { tem_foto: false, foto_versao: ((sessao.eu as any).foto_versao ?? 0) + 1 });
+}
 
 const atual = ref('');
 const nova = ref('');
@@ -33,11 +63,24 @@ async function trocarSenha() {
 
 <template>
   <div v-if="eu">
-    <h1>Olá, {{ eu.nome.split(' ')[0] }}</h1>
-    <p class="sub">
-      {{ PAPEIS[eu.papel] }}<template v-if="eu.grupo"> · {{ GRUPOS[eu.grupo] }}</template>
-      <span v-if="eu.admin_sistema" class="selo teal">Administrador do sistema</span>
-    </p>
+    <div class="perfil">
+      <div class="foto">
+        <Avatar :id="eu.id" :nome="eu.nome" :tem-foto="eu.tem_foto" :versao="eu.foto_versao" :tamanho="84" />
+        <label class="trocar" :class="{ ocupado: enviandoFoto }" title="Trocar foto">
+          {{ enviandoFoto ? '…' : '📷' }}
+          <input ref="inputFoto" type="file" accept="image/jpeg,image/png,image/webp" hidden :disabled="enviandoFoto || !!eu.por" @change="trocarFoto" />
+        </label>
+      </div>
+      <div>
+        <h1>Olá, {{ eu.nome.split(' ')[0] }}</h1>
+        <p class="sub">
+          {{ PAPEIS[eu.papel] }}<template v-if="eu.grupo"> · {{ GRUPOS[eu.grupo] }}</template>
+          <span v-if="eu.admin_sistema" class="selo teal">Administrador do sistema</span>
+        </p>
+        <button v-if="eu.tem_foto && !eu.por" class="link" @click="removerFoto">remover foto</button>
+        <p v-if="erroFoto" class="erro">{{ erroFoto }}</p>
+      </div>
+    </div>
 
     <div class="grade duas">
       <section class="cartao">
@@ -60,7 +103,7 @@ async function trocarSenha() {
         </p>
       </section>
 
-      <form class="cartao senha" @submit.prevent="trocarSenha">
+      <form v-if="!eu.por" class="cartao senha" @submit.prevent="trocarSenha">
         <h2>Trocar minha senha</h2>
         <p class="detalhe">A mesma senha vale em todos os ambientes do HUB em que você tem acesso.</p>
         <label class="campo">Senha atual <input v-model="atual" type="password" autocomplete="current-password" required /></label>
@@ -101,6 +144,14 @@ async function trocarSenha() {
 </template>
 
 <style scoped>
+.perfil { display: flex; gap: 1.1rem; align-items: center; margin-bottom: 1.25rem; }
+.perfil h1 { margin: 0; }
+.perfil .sub { margin: .2rem 0 .3rem; }
+.foto { position: relative; }
+.trocar { position: absolute; right: -4px; bottom: -4px; width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 1px solid var(--borda);
+  display: grid; place-items: center; cursor: pointer; font-size: .95rem; box-shadow: 0 2px 6px rgba(0, 0, 0, .12); }
+.trocar:hover { border-color: var(--teal-700); }
+.trocar.ocupado { cursor: wait; }
 .detalhe { font-size: .88rem; color: var(--texto-2); margin: .75rem 0 0; line-height: 1.7; }
 .senha { display: flex; flex-direction: column; gap: .9rem; }
 .senha .detalhe { margin: -0.5rem 0 0; }

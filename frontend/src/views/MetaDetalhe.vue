@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { api, EIXOS, GRUPOS, STATUS } from '../api';
 import { sessao } from '../sessao';
+import { confirmar } from '../dialogo';
 
 const rota = useRoute();
 const id = computed(() => Number(rota.params.id));
@@ -62,7 +63,7 @@ const salvarIndicador = () => executar(async () => {
   else await api(`/indicadores/${indicadorAberto.value}`, { metodo: 'PUT', corpo: formInd });
   indicadorAberto.value = null;
 }, 'Ficha do indicador salva.');
-const apagarIndicador = (i: any) => confirm(`Remover o indicador "${i.nome}"?`) &&
+const apagarIndicador = async (i: any) => await confirmar({ titulo: 'Remover indicador?', texto: `"${i.nome}" e a ficha dele serão removidos.`, confirmar: 'Remover', perigo: true }) &&
   executar(() => api(`/indicadores/${i.id}`, { metodo: 'DELETE' }), 'Indicador removido.');
 
 // ---- ações
@@ -79,7 +80,7 @@ const salvarAcao = () => executar(async () => {
   else await api(`/acoes/${acaoAberta.value}`, { metodo: 'PUT', corpo: formAcao });
   acaoAberta.value = null;
 }, 'Ação salva.');
-const apagarAcao = (a: any) => confirm(`Remover a ação "${a.titulo}"?`) &&
+const apagarAcao = async (a: any) => await confirmar({ titulo: 'Remover ação?', texto: `"${a.titulo}" será removida. Atividades ligadas a ela ficam sem ação relacionada.`, confirmar: 'Remover', perigo: true }) &&
   executar(() => api(`/acoes/${a.id}`, { metodo: 'DELETE' }), 'Ação removida.');
 const podeEditarAcao = (a: any) => {
   const e = m.value?.pode.editar_acoes_escopo;
