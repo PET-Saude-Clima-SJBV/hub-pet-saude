@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import type { Map } from 'leaflet';
+import { CENTRO_SJBV, camadaCalor, criarMapa } from '../mapa/mapaBase';
 
 /**
- * Mapa de calor de São João da Boa Vista.
- * ATENÇÃO: intensidades ILUSTRATIVAS. Os territórios reais serão definidos pelo Grupo I e os dados
- * virão do HUB (PostGIS); aí este componente passa a receber os pontos por `props`.
+ * Mapa de calor geral do município.
+ * ATENÇÃO: intensidades ILUSTRATIVAS. Quando houver dados reais, os pontos chegam por `pontos`.
  */
 const props = withDefaults(defineProps<{
   pontos?: [number, number, number][];   // [lat, lng, intensidade 0..1]
   altura?: number;
 }>(), { altura: 380 });
 
-const CENTRO: [number, number] = [-21.9692, -46.7983];
 const el = ref<HTMLDivElement | null>(null);
-let mapa: L.Map | null = null;
+let mapa: Map | null = null;
 
 // regiões fictícias ao redor do centro, com intensidades diferentes (só para ilustrar)
 function pontosIlustrativos(): [number, number, number][] {
+  const [lat0, lng0] = CENTRO_SJBV;
   const regioes: [number, number, number, number][] = [
-    // dLat, dLng, intensidade, espalhamento
     [0.000, 0.000, 0.95, 0.006], [0.012, 0.010, 0.75, 0.007], [-0.014, 0.008, 0.55, 0.008],
     [0.006, -0.016, 0.85, 0.006], [-0.010, -0.012, 0.35, 0.009], [0.020, -0.004, 0.45, 0.007],
   ];
@@ -29,7 +27,7 @@ function pontosIlustrativos(): [number, number, number][] {
   const pts: [number, number, number][] = [];
   for (const [dLat, dLng, int, esp] of regioes) {
     for (let i = 0; i < 40; i++) {
-      pts.push([CENTRO[0] + dLat + (aleatorio() - 0.5) * esp * 2, CENTRO[1] + dLng + (aleatorio() - 0.5) * esp * 2, int * (0.6 + aleatorio() * 0.4)]);
+      pts.push([lat0 + dLat + (aleatorio() - 0.5) * esp * 2, lng0 + dLng + (aleatorio() - 0.5) * esp * 2, int * (0.6 + aleatorio() * 0.4)]);
     }
   }
   return pts;
@@ -37,22 +35,9 @@ function pontosIlustrativos(): [number, number, number][] {
 
 onMounted(async () => {
   if (!el.value) return;
-  // o plugin de calor espera o Leaflet como variável global
-  (window as any).L = L;
-  await import('leaflet.heat');
-  mapa = L.map(el.value, { center: CENTRO, zoom: 13, scrollWheelZoom: false, attributionControl: true });
-  // mapa base do OpenStreetMap: gratuito e sem chave (exige só a atribuição e uso moderado)
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">colaboradores do OpenStreetMap</a>',
-  }).addTo(mapa);
-  // maxZoom igual ao zoom inicial: a intensidade não "some" ao afastar o mapa
-  (L as any).heatLayer(props.pontos ?? pontosIlustrativos(), {
-    radius: 30, blur: 24, maxZoom: 13, max: 1, minOpacity: 0.35,
-    gradient: { 0.2: '#1D9E75', 0.45: '#E0A040', 0.7: '#E07A40', 0.95: '#E24B4A' },
-  }).addTo(mapa);
+  mapa = criarMapa(el.value);
+  (await camadaCalor(props.pontos ?? pontosIlustrativos())).addTo(mapa);
 });
-
 onBeforeUnmount(() => mapa?.remove());
 </script>
 
