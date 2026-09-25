@@ -1,9 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { DbService } from '../db/db.service';
 import { config } from '../config';
+import { Funcionalidade, FuncionalidadeGuard } from '../funcionalidades/funcionalidades';
 
 /** Rotas abertas, sem login. Só dado agregado — nunca dado pessoal. */
 @Controller('publico')
+@UseGuards(FuncionalidadeGuard)
+@Funcionalidade('pagina_publica')
 export class PublicoController {
   constructor(private db: DbService) {}
 

@@ -5,10 +5,11 @@ export class ErroApi extends Error {
 }
 
 export async function api<T = any>(caminho: string, opcoes: { metodo?: string; corpo?: unknown } = {}): Promise<T> {
+  const formulario = opcoes.corpo instanceof FormData; // envio com arquivos: o navegador monta o multipart
   const r = await fetch(`/api${caminho}`, {
     method: opcoes.metodo ?? (opcoes.corpo ? 'POST' : 'GET'),
-    headers: opcoes.corpo ? { 'Content-Type': 'application/json' } : undefined,
-    body: opcoes.corpo ? JSON.stringify(opcoes.corpo) : undefined,
+    headers: opcoes.corpo && !formulario ? { 'Content-Type': 'application/json' } : undefined,
+    body: opcoes.corpo ? (formulario ? (opcoes.corpo as FormData) : JSON.stringify(opcoes.corpo)) : undefined,
     credentials: 'same-origin',
   });
   const dados = r.headers.get('content-type')?.includes('json') ? await r.json() : null;
@@ -48,7 +49,21 @@ export const STATUS: Record<string, { rotulo: string; cor: string }> = {
   concluido: { rotulo: 'Concluído', cor: 'verde' },
 };
 
-export const EIXOS: Record<string, string> = { I: 'Eixo I', II: 'Eixo II', III: 'Eixo III' };
+export const TIPOS_ATIVIDADE: Record<string, string> = {
+  acao_tecnica: 'Ação técnica', reuniao: 'Reunião', orientacao: 'Orientação', estudo: 'Estudo',
+  producao: 'Produção', evento: 'Evento', gestao: 'Gestão',
+};
+
+export const VALIDACAO: Record<string, { rotulo: string; cor: string }> = {
+  pendente: { rotulo: 'Aguardando validação', cor: 'azul' },
+  validada: { rotulo: 'Validada', cor: 'verde' },
+  devolvida: { rotulo: 'Devolvida', cor: 'vermelho' },
+};
+
+/** 90 -> "1h30" */
+export const horas = (min: number) => `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}`;
+
+export const EIXOS: Record<string, string>= { I: 'Eixo I', II: 'Eixo II', III: 'Eixo III' };
 
 export const GRUPOS: Record<number, string> ={ 1: 'PET I', 2: 'PET II', 3: 'PET III', 4: 'PET IV', 5: 'PET V' };
 

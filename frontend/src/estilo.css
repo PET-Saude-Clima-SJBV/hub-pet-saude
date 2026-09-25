@@ -46,7 +46,7 @@ h2 { font-size: 1.1rem; margin: 0 0 .75rem; }
 .botao.secundario:hover { background: var(--teal-50); }
 .botao.perigo { background: transparent; color: var(--vermelho); border-color: var(--vermelho); }
 
-label.campo { display: flex; flex-direction: column; gap: .3rem; font-size: .85rem; font-weight: 600; color: var(--texto-2); }
+.campo { display: flex; flex-direction: column; gap: .3rem; font-size: .85rem; font-weight: 600; color: var(--texto-2); }
 input, select, textarea {
   font: inherit; color: var(--texto); padding: .55rem .7rem;
   border: 1px solid var(--borda); border-radius: 8px; background: #fff; width: 100%;
