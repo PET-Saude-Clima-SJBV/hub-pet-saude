@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import { api, horas, STATUS, TIPOS_ATIVIDADE, VALIDACAO } from '../api';
+import { api, horas, STATUS, VALIDACAO } from '../api';
+import { carregarCatalogos, itens, nomeDe } from '../catalogos';
 import { confirmar } from '../dialogo';
 
 interface Evidencia { id: string; tipo: 'arquivo' | 'link'; nome: string; url: string | null; mime: string | null; tamanho: number | null }
 interface Atividade {
   id: string; data: string; hora_inicio: string; hora_fim: string; minutos: number; tipo: string; modalidade: string;
-  territorio: string | null; acao_id: number | null; acao_titulo: string | null; meta_codigo: string | null;
+  territorio: string | null; territorio_codigo: string | null; territorio_nome: string | null; acao_id: number | null; acao_titulo: string | null; meta_codigo: string | null;
   descricao: string; status: string; validacao: string; validador_nome: string | null; motivo_devolucao: string | null;
   evidencias: Evidencia[];
 }
@@ -20,7 +21,7 @@ const aviso = ref('');
 const enviando = ref(false);
 const editando = ref<string | null>(null);
 
-const vazio = () => ({ data: hoje, hora_inicio: '', hora_fim: '', tipo: '', modalidade: 'presencial', territorio: '',
+const vazio = () => ({ data: hoje, hora_inicio: '', hora_fim: '', tipo: '', modalidade: 'presencial', territorio: '', territorio_codigo: '',
   acao_id: '' as number | '', descricao: '', status: 'concluido' });
 const form = reactive(vazio());
 const arquivos = ref<File[]>([]);
@@ -51,7 +52,7 @@ async function carregar(de?: string) {
   }
 }
 onMounted(async () => {
-  await carregar();
+  await Promise.all([carregar(), carregarCatalogos()]);
   acoes.value = (await api<{ acoes: Acao[] }>('/atividades/opcoes').catch(() => ({ acoes: [] }))).acoes;
 });
 
@@ -70,7 +71,7 @@ function limpar() {
 
 function editar(a: Atividade) {
   Object.assign(form, { data: a.data, hora_inicio: a.hora_inicio, hora_fim: a.hora_fim, tipo: a.tipo, modalidade: a.modalidade,
-    territorio: a.territorio ?? '', acao_id: a.acao_id ?? '', descricao: a.descricao, status: a.status });
+    territorio: a.territorio ?? '', territorio_codigo: a.territorio_codigo ?? '', acao_id: a.acao_id ?? '', descricao: a.descricao, status: a.status });
   editando.value = a.id;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -141,7 +142,7 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
   <div v-if="dados?.devolvidas.length" class="aviso devolvidas">
     <strong>{{ dados.devolvidas.length }} atividade(s) devolvida(s) para correção.</strong>
     <div v-for="a in dados.devolvidas" :key="a.id" class="devolvida">
-      {{ dataLonga(a.data) }} · {{ TIPOS_ATIVIDADE[a.tipo] }}: <em>{{ a.motivo_devolucao }}</em>
+      {{ dataLonga(a.data) }} · {{ nomeDe('tipos_atividade', a.tipo) }}: <em>{{ a.motivo_devolucao }}</em>
       <button class="link" @click="editar(a)">corrigir</button>
     </div>
   </div>
@@ -161,16 +162,23 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
         <label class="campo">Tipo de atividade
           <select v-model="form.tipo" required>
             <option value="" disabled>Escolha…</option>
-            <option v-for="(r, k) in TIPOS_ATIVIDADE" :key="k" :value="k">{{ r }}</option>
+            <option v-for="i in itens('tipos_atividade')" :key="i.codigo" :value="i.codigo">{{ i.nome }}</option>
           </select>
         </label>
         <div class="campo">Modalidade
           <div class="opcoes">
-            <label :class="{ marcado: form.modalidade === 'presencial' }"><input v-model="form.modalidade" type="radio" value="presencial" /> Presencial</label>
-            <label :class="{ marcado: form.modalidade === 'remoto' }"><input v-model="form.modalidade" type="radio" value="remoto" /> Remoto</label>
+            <label v-for="m in itens('modalidades')" :key="m.codigo" :class="{ marcado: form.modalidade === m.codigo }">
+              <input v-model="form.modalidade" type="radio" :value="m.codigo" /> {{ m.nome }}
+            </label>
           </div>
         </div>
-        <label class="campo">Território / local <input v-model="form.territorio" placeholder="ex.: UBS Centro" /></label>
+        <label class="campo">Território
+          <select v-model="form.territorio_codigo">
+            <option value="">Não se aplica</option>
+            <option v-for="t in itens('territorios')" :key="t.codigo" :value="t.codigo">{{ t.nome }}</option>
+          </select>
+        </label>
+        <label class="campo">Local (opcional) <input v-model="form.territorio" placeholder="ex.: UBS Centro, Escola Estadual X" /></label>
         <label class="campo">Situação
           <select v-model="form.status"><option v-for="(s, k) in STATUS" :key="k" :value="k">{{ s.rotulo }}</option></select>
         </label>
@@ -230,8 +238,9 @@ const kb = (n: number | null) => n ? `${Math.max(1, Math.round(n / 1024))} KB` :
       <div v-for="a in d.lista" :key="a.id" class="cartao atividade">
         <div class="linha1">
           <span class="hora">{{ a.hora_inicio }}-{{ a.hora_fim }}</span>
-          <strong>{{ TIPOS_ATIVIDADE[a.tipo] }}</strong>
-          <span class="selo">{{ a.modalidade }}</span>
+          <strong>{{ nomeDe('tipos_atividade', a.tipo) }}</strong>
+          <span class="selo">{{ nomeDe('modalidades', a.modalidade) }}</span>
+          <span v-if="a.territorio_nome || a.territorio" class="selo">{{ [a.territorio_nome, a.territorio].filter(Boolean).join(', ') }}</span>
           <span v-if="a.meta_codigo" class="selo teal">{{ a.meta_codigo }} · {{ a.acao_titulo }}</span>
           <span class="selo" :class="VALIDACAO[a.validacao].cor">{{ VALIDACAO[a.validacao].rotulo }}</span>
         </div>

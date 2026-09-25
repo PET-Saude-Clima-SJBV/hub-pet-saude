@@ -10,6 +10,7 @@ import { config } from '../config';
 import { AdminGuard, LogadoGuard, Usuario, UsuarioSessao } from '../auth/guards';
 import { registrarAuditoria } from './auditoria';
 import { planoDeSincronizacao } from './sincronizacao';
+import { CatalogosService } from '../catalogos/catalogos';
 
 export const AMBIENTES = ['dev', 'hml', 'prod'] as const;
 const PAPEIS = ['aluno', 'preceptor', 'tutor', 'coordenador', 'coordenacao_geral', 'externo'];
@@ -23,6 +24,7 @@ interface UsuarioIn {
   admin_sistema?: boolean; ativo?: boolean;
   github_usuario?: string | null; github_permissao?: string;
   usuario_servidor?: string | null; chave_ssh?: string | null;
+  vinculo?: string | null; instituicao?: string | null; curso?: string | null;
   permissoes?: PermissaoIn[];
 }
 
@@ -44,7 +46,8 @@ export const PADRAO_POR_PERFIL: Record<string, PermissaoIn[]> = {
 };
 
 const CAMPOS = `id, nome, email, papel, perfil, grupo, admin_sistema, ativo, github_usuario, github_permissao,
-  usuario_servidor, chave_ssh, ultimo_login, criado_em, atualizado_em, foto_versao, foto IS NOT NULL AS tem_foto`;
+  usuario_servidor, chave_ssh, ultimo_login, criado_em, atualizado_em, foto_versao, foto IS NOT NULL AS tem_foto,
+  vinculo, instituicao, curso`;
 
 function senhaTemporaria() {
   return randomBytes(12).toString('base64url');
@@ -109,7 +112,19 @@ class SomenteNoCentral implements CanActivate {
 @Controller('admin')
 @UseGuards(LogadoGuard, AdminGuard)
 export class UsuariosController {
-  constructor(private db: DbService) {}
+  constructor(private db: DbService, private cat: CatalogosService) {}
+
+  /** Vínculo, instituição e curso vêm dos cadastros; o curso precisa ser da instituição escolhida. */
+  private async validarVinculo(d: UsuarioIn, antes?: any) {
+    const valor = (k: 'vinculo' | 'instituicao' | 'curso') => (d[k] !== undefined ? d[k] : antes?.[k]);
+    d.vinculo = await this.cat.exigir('vinculos', valor('vinculo'), 'o vínculo', true);
+    d.instituicao = await this.cat.exigir('instituicoes', valor('instituicao'), 'a instituição', true);
+    d.curso = await this.cat.exigir('cursos', valor('curso'), 'o curso', true);
+    if (d.curso && d.instituicao) {
+      const c = await this.db.um(`SELECT pai_codigo FROM hub.catalogo_itens WHERE catalogo = 'cursos' AND codigo = $1`, [d.curso]);
+      if (c?.pai_codigo && c.pai_codigo !== d.instituicao) throw new BadRequestException('Este curso não é da instituição escolhida');
+    }
+  }
 
   private async carregar(id: string) {
     const u = await this.db.um(`SELECT ${CAMPOS} FROM hub.usuarios WHERE id = $1`, [id]);
@@ -145,15 +160,16 @@ export class UsuariosController {
     validar(d, true);
     d.permissoes ??= PADRAO_POR_PERFIL[d.perfil];
     limparAcessoTecnico(d);
+    await this.validarVinculo(d);
     const senha = senhaTemporaria();
     const id = await this.db.transacao(async (c) => {
       const { rows } = await c.query(
         `INSERT INTO hub.usuarios (nome, email, senha_hash, papel, perfil, grupo, admin_sistema,
-           github_usuario, github_permissao, usuario_servidor, chave_ssh)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+           github_usuario, github_permissao, usuario_servidor, chave_ssh, vinculo, instituicao, curso)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
         [d.nome!.trim(), d.email!.trim().toLowerCase(), await bcrypt.hash(senha, 12), d.papel, d.perfil, d.grupo ?? null,
           !!d.admin_sistema, d.github_usuario || null, d.github_permissao ?? 'nenhum',
-          d.usuario_servidor || null, d.chave_ssh?.trim() || null],
+          d.usuario_servidor || null, d.chave_ssh?.trim() || null, d.vinculo, d.instituicao, d.curso],
       ).catch(traduzErroBanco);
       await gravarPermissoes(c, rows[0].id, d.permissoes!);
       return rows[0].id as string;
@@ -173,6 +189,7 @@ export class UsuariosController {
     d.perfil ??= antes.perfil;
     if (d.perfil === 'usuario') d.permissoes ??= antes.permissoes; // para limpar o acesso técnico que já existia
     limparAcessoTecnico(d);
+    await this.validarVinculo(d, antes);
 
     await this.db.transacao(async (c) => {
       await c.query(
@@ -185,13 +202,15 @@ export class UsuariosController {
            chave_ssh = CASE WHEN $12::boolean THEN $13 ELSE chave_ssh END,
            perfil = COALESCE($14, perfil),
            grupo = CASE WHEN $15::boolean THEN $16::smallint ELSE grupo END,
+           vinculo = $17, instituicao = $18, curso = $19,
            atualizado_em = now()
          WHERE id = $1`,
         [id, d.nome?.trim(), d.email?.trim().toLowerCase(), d.papel, d.admin_sistema, d.ativo,
           d.github_usuario !== undefined, d.github_usuario || null, d.github_permissao,
           d.usuario_servidor !== undefined, d.usuario_servidor || null,
           d.chave_ssh !== undefined, d.chave_ssh?.trim() || null,
-          d.perfil, d.grupo !== undefined, d.grupo ?? null],
+          d.perfil, d.grupo !== undefined, d.grupo ?? null,
+          d.vinculo, d.instituicao, d.curso],
       ).catch(traduzErroBanco);
       if (d.permissoes) await gravarPermissoes(c, id, d.permissoes);
     });
@@ -248,6 +267,7 @@ export class UsuariosController {
 function resumo(u: any) {
   return {
     papel: u.papel, perfil: u.perfil, grupo: u.grupo, admin_sistema: u.admin_sistema, ativo: u.ativo,
+    vinculo: [u.vinculo, u.curso, u.instituicao].filter(Boolean).join(' / ') || null,
     github: u.github_usuario ? `${u.github_usuario}:${u.github_permissao}` : u.github_permissao,
     usuario_servidor: u.usuario_servidor, tem_chave_ssh: !!u.chave_ssh,
     permissoes: Object.fromEntries(

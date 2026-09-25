@@ -94,7 +94,8 @@ function estadoDesejado(pessoas) {
 
 // ---------------------------------------------------------------- HUB (réplicas)
 const COLUNAS = ['id', 'nome', 'email', 'senha_hash', 'senha_atualizada_em', 'papel', 'perfil', 'grupo',
-  'admin_sistema', 'ativo', 'github_usuario', 'github_permissao', 'usuario_servidor', 'senha_banco'];
+  'admin_sistema', 'ativo', 'github_usuario', 'github_permissao', 'usuario_servidor', 'senha_banco',
+  'vinculo', 'instituicao', 'curso'];
 
 /** Senha trocada num ambiente gerenciado sobe para o central (vence a mais recente). */
 async function trazerSenhasNovas(central, replicas) {

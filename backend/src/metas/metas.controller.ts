@@ -7,6 +7,7 @@ import { LogadoGuard, Usuario, UsuarioSessao } from '../auth/guards';
 import { PermissoesService } from '../permissoes/permissoes';
 import { registrarAuditoria } from '../usuarios/auditoria';
 import { Funcionalidade, FuncionalidadeGuard } from '../funcionalidades/funcionalidades';
+import { CatalogosService } from '../catalogos/catalogos';
 
 const STATUS = ['nao_iniciado', 'em_andamento', 'em_atraso', 'concluido'];
 const PERIODICIDADES = ['semanal', 'mensal', 'trimestral', 'semestral', 'anual', 'unica'];
@@ -36,7 +37,7 @@ function status(v: unknown, padrao = 'nao_iniciado') {
 @UseGuards(LogadoGuard, FuncionalidadeGuard)
 @Funcionalidade('metas')
 export class MetasController {
-  constructor(private db: DbService, private perms: PermissoesService) {}
+  constructor(private db: DbService, private perms: PermissoesService, private cat: CatalogosService) {}
 
   private async meta(id: number) {
     const m = await this.db.um('SELECT * FROM hub.metas WHERE id = $1', [id]);
@@ -78,8 +79,10 @@ export class MetasController {
     for (const i of indicadores) { i.ficha_preenchida = ficha(i); i.ficha_total = CAMPOS_FICHA.length; }
     const podeVerAcoes = await this.perms.pode(u, 'acoes.ver', m.grupo);
     const acoes = podeVerAcoes ? await this.db.query(
-      `SELECT a.*, r.nome AS responsavel_nome FROM hub.acoes a
-       LEFT JOIN hub.usuarios r ON r.id = a.responsavel_id WHERE a.meta_id = $1 ORDER BY a.criado_em`, [id]) : [];
+      `SELECT a.*, r.nome AS responsavel_nome, t.nome AS territorio_nome FROM hub.acoes a
+       LEFT JOIN hub.usuarios r ON r.id = a.responsavel_id
+       LEFT JOIN hub.catalogo_itens t ON t.catalogo = 'territorios' AND t.codigo = a.territorio_codigo
+       WHERE a.meta_id = $1 ORDER BY a.criado_em`, [id]) : [];
     const escopoAcoes = await this.perms.escopo(u, 'acoes.editar');
     return {
       ...m, indicadores, acoes,
@@ -187,10 +190,11 @@ export class MetasController {
     await this.exigirEdicaoAcao(u, m.grupo);
     if (!texto(d.titulo, 300)) throw new BadRequestException('Informe o título da ação');
     const r = await this.db.um(
-      `INSERT INTO hub.acoes (meta_id, titulo, descricao, territorio, responsavel_id, prazo, status, criado_por)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      `INSERT INTO hub.acoes (meta_id, titulo, descricao, territorio, responsavel_id, prazo, status, criado_por, territorio_codigo)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
       [id, texto(d.titulo, 300), texto(d.descricao), texto(d.territorio, 200),
-        await this.validarResponsavel(d.responsavel_id, m.grupo), d.prazo || null, status(d.status), u.id]);
+        await this.validarResponsavel(d.responsavel_id, m.grupo), d.prazo || null, status(d.status), u.id,
+        await this.cat.exigir('territorios', d.territorio_codigo, 'o território', true)]);
     await registrarAuditoria(this.db, u, `criou ação na meta ${m.codigo}`, null, { acao: r.titulo });
     return r;
   }
@@ -202,9 +206,10 @@ export class MetasController {
     await this.exigirEdicaoAcao(u, a.grupo, a);
     const r = await this.db.um(
       `UPDATE hub.acoes SET titulo = $2, descricao = $3, territorio = $4, responsavel_id = $5, prazo = $6, status = $7,
-         atualizado_em = now() WHERE id = $1 RETURNING *`,
+         territorio_codigo = $8, atualizado_em = now() WHERE id = $1 RETURNING *`,
       [id, texto(d.titulo, 300) ?? a.titulo, texto(d.descricao), texto(d.territorio, 200),
-        await this.validarResponsavel(d.responsavel_id, a.grupo), d.prazo || null, status(d.status, a.status)]);
+        await this.validarResponsavel(d.responsavel_id, a.grupo), d.prazo || null, status(d.status, a.status),
+        await this.cat.exigir('territorios', d.territorio_codigo, 'o território', true)]);
     await registrarAuditoria(this.db, u, `alterou ação da meta ${a.codigo}`, null, { acao: r.titulo, status: [a.status, r.status] });
     return r;
   }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { api, GRUPOS, horas, PAPEIS, TIPOS_ATIVIDADE } from '../api';
+import { api, GRUPOS, horas, PAPEIS } from '../api';
+import { carregarCatalogos, nomeDe } from '../catalogos';
 import { pedirTexto } from '../dialogo';
 import Avatar from '../components/Avatar.vue';
 
@@ -29,7 +30,7 @@ async function carregar() {
     carregando.value = false;
   }
 }
-onMounted(carregar);
+onMounted(() => { carregarCatalogos(); carregar(); });
 
 const chave = (c: Cartao) => `${c.pessoa.id}|${c.semana}`;
 const DIAS = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom'];
@@ -125,7 +126,7 @@ const semanaTexto = (s: string) => {
           <td><input type="checkbox" :checked="marcadas.has(a.id)" :disabled="!a.evidencias.length" @change="alternar(a.id)" /></td>
           <td class="quando">{{ new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }) }}<br />{{ a.hora_inicio }}-{{ a.hora_fim }}</td>
           <td>
-            <strong>{{ TIPOS_ATIVIDADE[a.tipo] }}</strong> · {{ a.modalidade }}<template v-if="a.territorio"> · {{ a.territorio }}</template>
+            <strong>{{ nomeDe('tipos_atividade', a.tipo) }}</strong> · {{ nomeDe('modalidades', a.modalidade) }}<template v-if="(a as any).territorio_nome || a.territorio"> · {{ [(a as any).territorio_nome, a.territorio].filter(Boolean).join(', ') }}</template>
             <span v-if="a.meta_codigo" class="selo teal">{{ a.meta_codigo }}</span>
             <div>{{ a.descricao }}</div>
             <div class="evs">
