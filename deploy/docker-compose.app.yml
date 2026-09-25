@@ -22,11 +22,13 @@ services:
     build: ./app/frontend
     container_name: hub-${AMBIENTE}-web
     restart: unless-stopped
-    depends_on: [api]
+    depends_on:
+      api:
+        condition: service_healthy   # o nginx precisa do host "api" ao iniciar
+    # o proxy encontra este container pelo nome (hub-<amb>-web) na rede hub-proxy
     networks:
-      default: {}
-      hub-proxy:
-        aliases: [hub-${AMBIENTE}-web]
+      - default
+      - hub-proxy
 
 networks:
   hub-proxy:
