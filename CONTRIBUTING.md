@@ -85,6 +85,31 @@ Abra o PR de `merge/sua-branch-dev` → `dev`. Sua branch `feature/` continua li
 
 ---
 
+## Toda funcionalidade nova nasce atrás de uma chave
+
+Cada contexto do sistema tem uma **chave de funcionalidade** (Administração → Funcionalidades), que o tutor
+liga, desliga ou deixa **em teste** (só administradores e desenvolvedores) a qualquer momento, por ambiente.
+Se algo der errado em produção, desligar a chave tira a funcionalidade do ar sem novo deploy.
+
+Ao criar uma funcionalidade nova:
+
+1. **Migração**: cadastre a chave, começando em `teste`:
+   ```sql
+   INSERT INTO hub.funcionalidades (chave, nome, descricao, estado)
+   VALUES ('minha_func', 'Nome que o tutor vê', 'O que ela faz', 'teste');
+   ```
+2. **Backend**: proteja o controller:
+   ```ts
+   @UseGuards(LogadoGuard, FuncionalidadeGuard)
+   @Funcionalidade('minha_func')
+   export class MinhaFuncController { ... }
+   ```
+3. **Frontend**: na rota, `meta: { func: 'minha_func' }`; no menu, `v-if="sessao.func.minha_func"`.
+
+A chave não substitui a permissão por papel: as duas valem ao mesmo tempo.
+
+---
+
 ## Boas práticas
 
 - **Dados:** só dados fictícios no local e no dev. Nunca coloque dado real de paciente no Git.

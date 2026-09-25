@@ -18,6 +18,8 @@ services:
       ADMIN_NOME: ${ADMIN_NOME}
       ADMIN_SENHA_INICIAL: ${ADMIN_SENHA_INICIAL}
       VERSAO: ${VERSAO:-desconhecida}
+    volumes:
+      - evidencias:/data/evidencias
 
   web:
     build: ./app/frontend
@@ -34,3 +36,6 @@ services:
 networks:
   hub-proxy:
     external: true
+
+volumes:
+  evidencias:

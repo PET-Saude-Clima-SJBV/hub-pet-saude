@@ -12,11 +12,16 @@ import { PublicoController, SaudeController } from './publico/publico.controller
 import { AdminGuard, LogadoGuard } from './auth/guards';
 import { PermissoesController, PermissoesService } from './permissoes/permissoes';
 import { MetasController } from './metas/metas.controller';
+import { AtividadesController } from './atividades/atividades.controller';
+import { FuncionalidadeGuard, FuncionalidadesController, FuncionalidadesService } from './funcionalidades/funcionalidades';
 
 @Module({
   imports: [DbModule, JwtModule.register({ secret: config.jwtSegredo })],
-  controllers: [AuthController, UsuariosController, PublicoController, SaudeController, PermissoesController, MetasController],
-  providers: [LogadoGuard, AdminGuard, PermissoesService],
+  controllers: [
+    AuthController, UsuariosController, PublicoController, SaudeController, PermissoesController,
+    FuncionalidadesController, MetasController, AtividadesController,
+  ],
+  providers: [LogadoGuard, AdminGuard, PermissoesService, FuncionalidadesService, FuncionalidadeGuard],
 })
 class AppModule {}
 

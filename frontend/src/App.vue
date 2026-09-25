@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { sessao, sair } from './sessao';
+import { amplo, sessao, sair } from './sessao';
 import { NOME_AMBIENTE } from './api';
 
 const rota = useRoute();
@@ -25,7 +25,13 @@ async function logout() {
       <div class="marca">HUB <span>PET-Saúde</span></div>
       <nav>
         <RouterLink to="/inicio">Minha área</RouterLink>
-        <template v-if="['grupo', 'todos'].includes(sessao.pode['metas.ver'])">
+        <template v-if="sessao.func.atividades && sessao.pode['atividades.registrar'] !== 'nenhum'">
+          <div class="grupo">Atividades</div>
+          <RouterLink to="/atividades" exact-active-class="router-link-active" active-class="">Minhas atividades</RouterLink>
+          <RouterLink v-if="amplo('atividades.validar')" to="/atividades/validacao">Validação</RouterLink>
+          <RouterLink to="/atividades/resumo">Resumo por pessoa</RouterLink>
+        </template>
+        <template v-if="sessao.func.metas && amplo('metas.ver')">
           <div class="grupo">Projeto</div>
           <RouterLink to="/metas">Metas e ações</RouterLink>
         </template>
@@ -33,6 +39,7 @@ async function logout() {
           <div class="grupo">Administração</div>
           <RouterLink to="/admin/pessoas">Pessoas e acessos</RouterLink>
           <RouterLink to="/admin/permissoes">Permissões por papel</RouterLink>
+          <RouterLink to="/admin/funcionalidades">Funcionalidades</RouterLink>
           <RouterLink to="/admin/sincronizacao">Sincronização</RouterLink>
           <RouterLink to="/admin/auditoria">Auditoria</RouterLink>
         </template>

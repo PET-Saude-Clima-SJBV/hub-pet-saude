@@ -18,6 +18,7 @@ export interface UsuarioSessao {
   nome: string;
   email: string;
   papel: string;
+  perfil: 'desenvolvedor' | 'usuario';
   grupo: number | null;
   admin_sistema: boolean;
 }
@@ -38,7 +39,7 @@ export class LogadoGuard implements CanActivate {
       throw new UnauthorizedException('Sessão expirada');
     }
     const u = await this.db.um<UsuarioSessao>(
-      `SELECT id, nome, email, papel, grupo, admin_sistema FROM hub.usuarios u WHERE id = $1 AND ${PODE_ENTRAR_AQUI}`,
+      `SELECT id, nome, email, papel, perfil, grupo, admin_sistema FROM hub.usuarios u WHERE id = $1 AND ${PODE_ENTRAR_AQUI}`,
       [sub],
     );
     if (!u) throw new UnauthorizedException('Sem acesso a este ambiente');

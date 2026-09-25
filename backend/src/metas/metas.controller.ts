@@ -6,6 +6,7 @@ import { DbService } from '../db/db.service';
 import { LogadoGuard, Usuario, UsuarioSessao } from '../auth/guards';
 import { PermissoesService } from '../permissoes/permissoes';
 import { registrarAuditoria } from '../usuarios/auditoria';
+import { Funcionalidade, FuncionalidadeGuard } from '../funcionalidades/funcionalidades';
 
 const STATUS = ['nao_iniciado', 'em_andamento', 'em_atraso', 'concluido'];
 const PERIODICIDADES = ['semanal', 'mensal', 'trimestral', 'semestral', 'anual', 'unica'];
@@ -32,7 +33,8 @@ function status(v: unknown, padrao = 'nao_iniciado') {
 }
 
 @Controller()
-@UseGuards(LogadoGuard)
+@UseGuards(LogadoGuard, FuncionalidadeGuard)
+@Funcionalidade('metas')
 export class MetasController {
   constructor(private db: DbService, private perms: PermissoesService) {}
 

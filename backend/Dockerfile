@@ -13,6 +13,9 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
 COPY migrations ./migrations
+# arquivos de evidência das atividades (volume próprio de cada ambiente)
+ENV EVIDENCIAS_DIR=/data/evidencias
+RUN mkdir -p /data/evidencias && chown node:node /data/evidencias
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --retries=5 \
