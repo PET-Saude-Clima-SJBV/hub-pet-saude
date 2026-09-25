@@ -1,23 +1,34 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { api, AMBIENTES, PAPEIS, Pessoa } from '../../api';
+import { api, AMBIENTES, GRUPOS, PAPEIS, Pessoa } from '../../api';
+import { carregarPainel, painel } from '../../painel';
 import PermissaoSelo from '../../components/PermissaoSelo.vue';
+import AvisoGerenciado from '../../components/AvisoGerenciado.vue';
 
 const pessoas = ref<Pessoa[]>([]);
 const filtro = ref('');
+const perfil = ref<'todos' | 'desenvolvedor' | 'usuario'>('todos');
 const erro = ref('');
 
 onMounted(async () => {
   try {
+    await carregarPainel();
     pessoas.value = await api<Pessoa[]>('/admin/usuarios');
   } catch (e) {
     erro.value = (e as Error).message;
   }
 });
 
+const contagem = computed(() => ({
+  todos: pessoas.value.length,
+  desenvolvedor: pessoas.value.filter((p) => p.perfil === 'desenvolvedor').length,
+  usuario: pessoas.value.filter((p) => p.perfil === 'usuario').length,
+}));
 const visiveis = computed(() => {
   const f = filtro.value.trim().toLowerCase();
-  return f ? pessoas.value.filter((p) => `${p.nome} ${p.email} ${p.github_usuario ?? ''}`.toLowerCase().includes(f)) : pessoas.value;
+  return pessoas.value
+    .filter((p) => perfil.value === 'todos' || p.perfil === perfil.value)
+    .filter((p) => !f || `${p.nome} ${p.email} ${p.github_usuario ?? ''}`.toLowerCase().includes(f));
 });
 const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente === amb);
 </script>
@@ -26,21 +37,30 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
   <div class="cabecalho">
     <div>
       <h1>Pessoas e acessos</h1>
-      <p class="sub">Quem acessa o quê: HUB, GitHub, servidor e bancos de cada ambiente.</p>
+      <p class="sub">Quem entra em cada ambiente do HUB e, para quem desenvolve, banco, servidor e GitHub.</p>
     </div>
-    <RouterLink to="/admin/pessoas/nova" class="botao">+ Nova pessoa</RouterLink>
+    <RouterLink v-if="painel.modo === 'central'" to="/admin/pessoas/nova" class="botao">+ Nova pessoa</RouterLink>
   </div>
 
+  <AvisoGerenciado />
   <p v-if="erro" class="erro">{{ erro }}</p>
 
   <section class="cartao">
-    <input v-model="filtro" placeholder="Buscar por nome, e-mail ou GitHub…" class="busca" />
+    <div class="filtros">
+      <div class="abas">
+        <button :class="{ ativa: perfil === 'todos' }" @click="perfil = 'todos'">Todos ({{ contagem.todos }})</button>
+        <button :class="{ ativa: perfil === 'desenvolvedor' }" @click="perfil = 'desenvolvedor'">Desenvolvedores ({{ contagem.desenvolvedor }})</button>
+        <button :class="{ ativa: perfil === 'usuario' }" @click="perfil = 'usuario'">Usuários do sistema ({{ contagem.usuario }})</button>
+      </div>
+      <input v-model="filtro" placeholder="Buscar por nome, e-mail ou GitHub…" class="busca" />
+    </div>
+
     <div class="rolagem">
       <table class="tabela">
         <thead>
           <tr>
-            <th>Pessoa</th><th>Papel</th><th>GitHub</th>
-            <th v-for="a in AMBIENTES" :key="a" class="amb">{{ a }}<br /><small>banco · servidor</small></th>
+            <th>Pessoa</th><th>Papel · grupo</th><th>GitHub</th>
+            <th v-for="a in AMBIENTES" :key="a" class="amb">{{ a }}<br /><small>hub · banco · servidor</small></th>
             <th></th>
           </tr>
         </thead>
@@ -50,20 +70,28 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
               <strong>{{ p.nome }}</strong>
               <span v-if="p.admin_sistema" class="selo teal">admin</span>
               <span v-if="!p.ativo" class="selo vermelho">inativo</span>
-              <div class="email">{{ p.email }}</div>
+              <div class="miudo">{{ p.email }}</div>
             </td>
-            <td>{{ PAPEIS[p.papel] }}</td>
+            <td>
+              {{ PAPEIS[p.papel] }}
+              <div class="miudo">{{ p.grupo ? GRUPOS[p.grupo] : '—' }} · {{ p.perfil === 'desenvolvedor' ? 'dev' : 'usuário' }}</div>
+            </td>
             <td>
               <PermissaoSelo :nivel="p.github_permissao" />
-              <div class="email">{{ p.github_usuario ? '@' + p.github_usuario : '' }}</div>
+              <div class="miudo">{{ p.github_usuario ? '@' + p.github_usuario : '' }}</div>
             </td>
             <td v-for="a in AMBIENTES" :key="a" class="amb">
-              <PermissaoSelo :nivel="perm(p, a)?.banco ?? 'nenhum'" />
-              <span class="srv" :title="perm(p, a)?.servidor ? 'Acesso ao servidor' : 'Sem acesso ao servidor'">
-                {{ perm(p, a)?.servidor ? '●' : '○' }}
+              <span class="hub" :class="{ sim: perm(p, a)?.hub }" :title="perm(p, a)?.hub ? 'Entra no HUB' : 'Não entra no HUB'">
+                {{ perm(p, a)?.hub ? 'HUB' : '—' }}
               </span>
+              <template v-if="p.perfil === 'desenvolvedor'">
+                <PermissaoSelo :nivel="perm(p, a)?.banco ?? 'nenhum'" />
+                <span class="srv" :title="perm(p, a)?.servidor ? 'Acesso ao servidor' : 'Sem acesso ao servidor'">
+                  {{ perm(p, a)?.servidor ? '●' : '○' }}
+                </span>
+              </template>
             </td>
-            <td><RouterLink :to="`/admin/pessoas/${p.id}`">Editar</RouterLink></td>
+            <td><RouterLink :to="`/admin/pessoas/${p.id}`">{{ painel.modo === 'central' ? 'Editar' : 'Ver' }}</RouterLink></td>
           </tr>
           <tr v-if="!visiveis.length"><td colspan="7" class="vazio">Nenhuma pessoa encontrada.</td></tr>
         </tbody>
@@ -74,10 +102,16 @@ const perm = (p: Pessoa, amb: string) => p.permissoes.find((x) => x.ambiente ===
 
 <style scoped>
 .cabecalho { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
-.busca { max-width: 360px; margin-bottom: 1rem; }
-.email { font-size: .8rem; color: var(--texto-2); }
+.filtros { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.abas { display: flex; gap: .25rem; flex-wrap: wrap; }
+.abas button { border: 1px solid var(--borda); background: #fff; padding: .4rem .8rem; border-radius: 999px; font: inherit; font-size: .85rem; cursor: pointer; color: var(--texto-2); }
+.abas button.ativa { background: var(--teal-700); border-color: var(--teal-700); color: #fff; font-weight: 600; }
+.busca { max-width: 320px; }
+.miudo { font-size: .8rem; color: var(--texto-2); }
 .amb { text-align: center; white-space: nowrap; }
 .amb small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.hub { font-size: .72rem; font-weight: 700; color: var(--cinza); margin-right: .3rem; }
+.hub.sim { color: var(--teal-700); }
 .srv { margin-left: .35rem; color: var(--verde); }
 .inativo { opacity: .55; }
 .vazio { text-align: center; color: var(--texto-2); }

@@ -11,6 +11,7 @@ services:
         condition: service_healthy
     environment:
       AMBIENTE: ${AMBIENTE}
+      PAINEL_MODO: ${PAINEL_MODO:-central}   # gerenciado = pessoas vêm do painel central
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       JWT_SEGREDO: ${JWT_SEGREDO}
       ADMIN_EMAIL: ${ADMIN_EMAIL}

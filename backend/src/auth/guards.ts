@@ -5,7 +5,13 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { DbService } from '../db/db.service';
-import { COOKIE_SESSAO } from '../config';
+import { COOKIE_SESSAO, config } from '../config';
+
+/** Condição SQL: a pessoa (hub.usuarios u) pode entrar no HUB deste ambiente. */
+export const PODE_ENTRAR_AQUI = config.ambiente === 'local'
+  ? 'u.ativo'
+  : `u.ativo AND EXISTS (SELECT 1 FROM hub.permissoes_ambiente p
+       WHERE p.usuario_id = u.id AND p.ambiente = '${config.ambiente}' AND p.hub)`;
 
 export interface UsuarioSessao {
   id: string;
@@ -31,10 +37,10 @@ export class LogadoGuard implements CanActivate {
       throw new UnauthorizedException('Sessão expirada');
     }
     const u = await this.db.um<UsuarioSessao>(
-      'SELECT id, nome, email, papel, admin_sistema FROM hub.usuarios WHERE id = $1 AND ativo',
+      `SELECT id, nome, email, papel, admin_sistema FROM hub.usuarios u WHERE id = $1 AND ${PODE_ENTRAR_AQUI}`,
       [sub],
     );
-    if (!u) throw new UnauthorizedException('Usuário inativo');
+    if (!u) throw new UnauthorizedException('Sem acesso a este ambiente');
     req.usuario = u;
     return true;
   }
